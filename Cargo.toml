@@ -4,4 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-winapi={ version="0.3", features=["winuser", "windef", "minwindef"] }
+winapi={ version="0.3", features=["winuser"] }
+window_controller={ git="https://github.com/SuccessfullyFailed/window_controller" }

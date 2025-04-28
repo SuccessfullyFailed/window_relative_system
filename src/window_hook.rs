@@ -1,5 +1,6 @@
 use winapi::um::winuser::{DispatchMessageW, GetMessageW, SetWinEventHook, TranslateMessage, EVENT_SYSTEM_FOREGROUND, MSG, WINEVENT_OUTOFCONTEXT};
 use winapi::shared::{ minwindef::DWORD, ntdef::LONG, windef::{ HWINEVENTHOOK, HWINEVENTHOOK__, HWND } };
+use window_controller::WindowController;
 use std::{ mem, ptr::null_mut, sync::{ Mutex, MutexGuard }, thread };
 
 
@@ -41,8 +42,9 @@ pub fn install(create_thread:bool) {
 }
 
 /// Handle a windows hook event to process changes in active window.
-unsafe extern "system" fn win_event_proc(_event_hook:HWINEVENTHOOK, event:DWORD, _hwnd:HWND, _id_object:LONG, _id_child:LONG, _dw_event_thread:DWORD, _dwms_event_time:DWORD) {
+unsafe extern "system" fn win_event_proc(_event_hook:HWINEVENTHOOK, event:DWORD, hwnd:HWND, _id_object:LONG, _id_child:LONG, _dw_event_thread:DWORD, _dwms_event_time:DWORD) {
 	if event == EVENT_SYSTEM_FOREGROUND {
-		println!("changed window");
+		let window_controller:WindowController = WindowController::from_hwnd(hwnd);
+		println!("changed window: {}", window_controller.title());
 	}
 }
