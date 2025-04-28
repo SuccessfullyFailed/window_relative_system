@@ -3,6 +3,8 @@ use winapi::shared::{ minwindef::DWORD, ntdef::LONG, windef::{ HWINEVENTHOOK, HW
 use window_controller::WindowController;
 use std::{ mem, ptr::null_mut, sync::{ Mutex, MutexGuard }, thread };
 
+use crate::WindowRelativeSystem;
+
 
 
 static HOOK_INSTALLED:Mutex<bool> = Mutex::new(false);
@@ -45,6 +47,6 @@ pub fn install(create_thread:bool) {
 unsafe extern "system" fn win_event_proc(_event_hook:HWINEVENTHOOK, event:DWORD, hwnd:HWND, _id_object:LONG, _id_child:LONG, _dw_event_thread:DWORD, _dwms_event_time:DWORD) {
 	if event == EVENT_SYSTEM_FOREGROUND {
 		let window_controller:WindowController = WindowController::from_hwnd(hwnd);
-		println!("changed window: {}", window_controller.title());
+		WindowRelativeSystem::update_profile(window_controller);
 	}
 }
