@@ -1,8 +1,8 @@
 mod system;
-mod window_relative_profile;
+mod profile;
+mod profile_creation_macro;
+mod window_hook;
+mod window_hook_u;
 
 pub use system::*;
-pub use window_relative_profile::*;
-
-pub mod window_hook;
-mod window_hook_u;
+pub use profile::*;

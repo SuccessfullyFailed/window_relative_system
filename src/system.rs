@@ -92,7 +92,9 @@ impl WindowRelativeSystem {
 impl Default for WindowRelativeSystem {
 	fn default() -> Self {
 		WindowRelativeSystem {
-			profiles: vec![],
+			profiles: vec![
+				WindowRelativeProfile::new("DEFAULT_PROFILE_ID", "DEFAULT_PROFILE_TITLE", "DEFAULT_PROFILE_PROCESS_NAME").with_active_checker(|_, _, _| false)
+			],
 			active_profile_index: 0,
 			error_handler: Box::new(|profile, event_name, error| DEFAULT_ERROR_HANDLER(profile, event_name, error))
 		}

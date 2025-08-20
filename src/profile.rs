@@ -22,7 +22,6 @@ pub struct WindowRelativeProfileProperties {
 	is_active:bool
 }
 pub struct WindowRelativeProfileEventHandlers {
-	on_create:WindowRelativeEventHandlers,
 	on_open:WindowRelativeEventHandlers,
 	on_activate:WindowRelativeEventHandlers,
 	on_deactivate:WindowRelativeEventHandlers
@@ -44,7 +43,6 @@ impl WindowRelativeProfile {
 				is_active: false
 			},
 			event_handlers: WindowRelativeProfileEventHandlers {
-				on_create: Vec::new(),
 				on_open: Vec::new(),
 				on_activate: Vec::new(),
 				on_deactivate: Vec::new()
@@ -55,12 +53,6 @@ impl WindowRelativeProfile {
 	/// Replace the active checker and return self.
 	pub fn with_active_checker<T>(mut self, active_checker:T) -> Self where T:Fn(&WindowRelativeProfileProperties, &str, &str) -> bool + Send + 'static {
 		self.properties.active_checker = Box::new(active_checker);
-		self
-	}
-
-	/// Add a profile create event handler.
-	pub fn with_create_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send + 'static {
-		self.event_handlers.on_create.push(Box::new(handler));
 		self
 	}
 
@@ -113,14 +105,6 @@ impl WindowRelativeProfile {
 
 
 	/* EVENT HANDLER METHODS */
-
-	/// The profile was created.
-	pub(crate) fn trigger_create_event(&mut self) -> WindowRelativeEventResponse {
-		for handler in &self.event_handlers.on_create {
-			handler(&mut self.properties)?;
-		}
-		Ok(())
-	}
 
 	/// The profile was opened.
 	pub(crate) fn trigger_open_event(&mut self) -> WindowRelativeEventResponse {

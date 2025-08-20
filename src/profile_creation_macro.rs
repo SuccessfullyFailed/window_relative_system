@@ -6,9 +6,6 @@ macro_rules! create_profile {
 			let mut profile = crate::WindowRelativeProfile::new($id, $title, $process_name);
 			let modifier:fn(crate::WindowRelativeProfile) -> crate::WindowRelativeProfile = $properties_modifier;
 			profile = modifier(profile);
-			if let Err(error) = profile.trigger_create_event() {
-				crate::DEFAULT_ERROR_HANDLER(&profile, "create", &*error);
-			}
 			crate::WindowRelativeSystem::add_profile(profile);
 		}
 	};
