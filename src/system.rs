@@ -1,6 +1,6 @@
 use std::{ error::Error, sync::{ Mutex, MutexGuard } };
+use crate::{ window_hook, WindowRelativeProfile };
 use window_controller::WindowController;
-use crate::WindowRelativeProfile;
 
 
 
@@ -17,6 +17,11 @@ pub struct WindowRelativeSystem {
 impl WindowRelativeSystem {
 	
 	/* EVENT METHODS */
+
+	/// Start the system. Installs the hook that triggers events in profiles.
+	pub fn start(create_thread:bool) {
+		window_hook::install(create_thread);
+	}
 
 	/// Add a profile to the system.
 	pub fn add_profile(profile:WindowRelativeProfile) {
