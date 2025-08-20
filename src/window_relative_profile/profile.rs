@@ -1,43 +1,154 @@
-use super::ProfileProperties;
+use std::error::Error;
 
 
 
-pub trait WindowRelativeProfile:Send {
+type WindowRelativeEventResponse = Result<(), Box<dyn Error>>;
+type WindowRelativeEventHandler = dyn Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send;
+type WindowRelativeEventHandlers = Vec<Box<WindowRelativeEventHandler>>;
 
-	/* PROFILE PROPERTY METHODS */
 
-	/// Get the profile properties.
-	fn properties(&self) -> &ProfileProperties;
 
-	/// Get the profile properties mutable.
-	fn properties_mut(&mut self) -> &mut ProfileProperties;
+pub struct WindowRelativeProfile {
+	properties: WindowRelativeProfileProperties,
+	event_handlers:WindowRelativeProfileEventHandlers
+}
+pub struct WindowRelativeProfileProperties {
+	id:String,
+	title:String,
+	process_name:String,
 	
-	/// Check if this profile fits the current process.
-	fn is_active(&self, active_process_name:&str, _active_process_title:&str) -> bool {
-		self.properties().process_name == active_process_name
+	active_checker:Box<dyn Fn(&WindowRelativeProfileProperties, &str, &str) -> bool + Send>,
+	is_opened:bool,
+	is_active:bool
+}
+pub struct WindowRelativeProfileEventHandlers {
+	on_create:WindowRelativeEventHandlers,
+	on_open:WindowRelativeEventHandlers,
+	on_activate:WindowRelativeEventHandlers,
+	on_deactivate:WindowRelativeEventHandlers
+}
+impl WindowRelativeProfile {
+
+	/* CONSTRUCTOR METHODS */
+
+	/// Create a new profile.
+	pub fn new(id:&str, title:&str, process_name:&str) -> WindowRelativeProfile {
+		WindowRelativeProfile {
+			properties: WindowRelativeProfileProperties {
+				id: id.to_string(),
+				title: title.to_string(),
+				process_name: process_name.to_string(),
+				
+				active_checker: Box::new(|_self, active_process_name, _active_process_title| active_process_name == _self.process_name),
+				is_opened: false,
+				is_active: false
+			},
+			event_handlers: WindowRelativeProfileEventHandlers {
+				on_create: Vec::new(),
+				on_open: Vec::new(),
+				on_activate: Vec::new(),
+				on_deactivate: Vec::new()
+			}
+		}
 	}
 
-	
-
-	/* STATUS UPDATE HANDLERS */
-
-	/// Handler for when the profile is created.
-	fn on_create(&mut self) {
+	/// Replace the active checker and return self.
+	pub fn with_active_checker<T>(mut self, active_checker:T) -> Self where T:Fn(&WindowRelativeProfileProperties, &str, &str) -> bool + Send + 'static {
+		self.properties.active_checker = Box::new(active_checker);
+		self
 	}
 
-	/// Handler for when the profile activates.
-	fn on_activate(&mut self) {
+	/// Add a profile create event handler.
+	pub fn with_create_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send + 'static {
+		self.event_handlers.on_create.push(Box::new(handler));
+		self
 	}
 
-	/// Handler for when the profile deactivates.
-	fn on_deactivate(&mut self) {
+	/// Add a profile open event handler.
+	pub fn with_open_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send + 'static {
+		self.event_handlers.on_open.push(Box::new(handler));
+		self
 	}
 
-	/// Handler for when the window is initially opened.
-	fn on_open(&mut self) {
+	/// Add a profile activate event handler.
+	pub fn with_activate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send + 'static {
+		self.event_handlers.on_activate.push(Box::new(handler));
+		self
 	}
 
-	/// Handler for then the window is closed.
-	fn on_exit(&mut self) {
+	/// Add a profile deactivate event handler.
+	pub fn with_deactivate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send + 'static {
+		self.event_handlers.on_deactivate.push(Box::new(handler));
+		self
+	}
+
+
+
+	/* PROPERTY GETTER METHODS */
+
+	/// Get the ID of the profile.
+	pub fn id(&self) -> &str {
+		&self.properties.id
+	}
+
+	/// Get the title of the profile.
+	pub fn title(&self) -> &str {
+		&self.properties.title
+	}
+
+	/// Get the process-name of the profile.
+	pub fn process_name(&self) -> &str {
+		&self.properties.process_name
+	}
+
+
+
+	/* USAGE METHODS */
+
+	/// Check if this is the active profile.
+	pub fn is_active(&self, active_process_name:&str, active_process_title:&str) -> bool {
+		(self.properties.active_checker)(&self.properties, active_process_name, active_process_title)
+	}
+
+
+
+	/* EVENT HANDLER METHODS */
+
+	/// The profile was created.
+	pub(crate) fn trigger_create_event(&mut self) -> WindowRelativeEventResponse {
+		for handler in &self.event_handlers.on_create {
+			handler(&mut self.properties)?;
+		}
+		Ok(())
+	}
+
+	/// The profile was opened.
+	pub(crate) fn trigger_open_event(&mut self) -> WindowRelativeEventResponse {
+		self.properties.is_opened = true;
+		for handler in &self.event_handlers.on_open {
+			handler(&mut self.properties)?;
+		}
+		Ok(())
+	}
+
+	/// The profile was activated.
+	pub(crate) fn trigger_activate_event(&mut self) -> WindowRelativeEventResponse {
+		if !self.properties.is_opened {
+			self.trigger_open_event()?;
+		}
+		self.properties.is_active = true;
+		for handler in &self.event_handlers.on_activate {
+			handler(&mut self.properties)?;
+		}
+		Ok(())
+	}
+
+	/// The profile was deactivated.
+	pub(crate) fn trigger_deactivate_event(&mut self) -> WindowRelativeEventResponse {
+		self.properties.is_active = false;
+		for handler in &self.event_handlers.on_deactivate {
+			handler(&mut self.properties)?;
+		}
+		Ok(())
 	}
 }
