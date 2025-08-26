@@ -1,4 +1,4 @@
-use std::{ error::Error, sync::{ Mutex, MutexGuard } };
+use std::{ error::Error, sync::{ Mutex, MutexGuard }, thread::sleep, time::{Duration, Instant} };
 use crate::{ window_hook, WindowRelativeProfile };
 use window_controller::WindowController;
 
@@ -12,15 +12,44 @@ pub(crate) const DEFAULT_ERROR_HANDLER:&dyn Fn(&WindowRelativeProfile, &str, &dy
 pub struct WindowRelativeSystem {
 	profiles:Vec<WindowRelativeProfile>,
 	active_profile_index:usize,
-	error_handler:Box<dyn Fn(&WindowRelativeProfile, &str, &dyn Error) + Send>
+	error_handler:Box<dyn Fn(&WindowRelativeProfile, &str, &dyn Error) + Send>,
+	interval:Duration
 }
 impl WindowRelativeSystem {
 	
 	/* EVENT METHODS */
 
-	/// Start the system. Installs the hook that triggers events in profiles.
-	pub fn start(create_thread:bool) {
-		window_hook::install(create_thread);
+	/// Run the system. Installs the hook that triggers events in profiles.
+	pub fn run() {
+		window_hook::install(true);
+
+		// Ensure system existence.
+		Self::execute_on_system(|_| {});
+
+		// Repeat indefinitely.
+		loop {
+			let mut sleep_time:Duration = Duration::from_millis(0);
+			{
+				let loop_start:Instant = Instant::now();
+
+				// Get system lock.
+				let mut system_guard:MutexGuard<'_, Option<WindowRelativeSystem>> = SYSTEM_INST.lock().unwrap();
+				let system:&mut WindowRelativeSystem = (*system_guard).as_mut().unwrap();
+
+				// Update system.
+				system.profiles[system.active_profile_index].task_system.run_once(&loop_start);
+
+				// Wait until loop end target instant.
+				let loop_end:Instant = loop_start + system.interval;
+				let now:Instant = Instant::now();
+				if now < loop_end {
+					sleep_time = loop_end - now;
+				}
+			}
+
+			// Sleep designated sleep-time.
+			sleep(sleep_time);
+		}
 	}
 
 	/// Add a profile to the system.
@@ -96,7 +125,8 @@ impl Default for WindowRelativeSystem {
 				WindowRelativeProfile::new("DEFAULT_PROFILE_ID", "DEFAULT_PROFILE_TITLE", "DEFAULT_PROFILE_PROCESS_NAME").with_active_checker(|_, _, _| false)
 			],
 			active_profile_index: 0,
-			error_handler: Box::new(|profile, event_name, error| DEFAULT_ERROR_HANDLER(profile, event_name, error))
+			error_handler: Box::new(|profile, event_name, error| DEFAULT_ERROR_HANDLER(profile, event_name, error)),
+			interval: Duration::from_millis(1000 / 60)
 		}
 	}
 }

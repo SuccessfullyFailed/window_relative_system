@@ -42,6 +42,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "task_syncer"
+version = "0.1.0"
+source = "git+https://github.com/SuccessfullyFailed/task_syncer#d85eaeb430d53fc24ee3daef2d401682ef4f3224"
+
+[[package]]
 name = "unicode-ident"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -82,6 +87,7 @@ name = "window_relative_system"
 version = "0.1.0"
 dependencies = [
  "ctor",
+ "task_syncer",
  "winapi",
  "window_controller",
 ]

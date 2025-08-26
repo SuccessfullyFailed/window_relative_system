@@ -1,3 +1,4 @@
+use task_syncer::{Task, TaskSystem};
 use std::error::Error;
 
 
@@ -10,7 +11,8 @@ type WindowRelativeEventHandlers = Vec<Box<WindowRelativeEventHandler>>;
 
 pub struct WindowRelativeProfile {
 	properties: WindowRelativeProfileProperties,
-	event_handlers:WindowRelativeProfileEventHandlers
+	event_handlers:WindowRelativeProfileEventHandlers,
+	pub(crate) task_system:TaskSystem
 }
 pub struct WindowRelativeProfileProperties {
 	id:String,
@@ -32,6 +34,8 @@ impl WindowRelativeProfile {
 
 	/// Create a new profile.
 	pub fn new(id:&str, title:&str, process_name:&str) -> WindowRelativeProfile {
+		let mut task_system:TaskSystem = TaskSystem::new();
+		task_system.pause();
 		WindowRelativeProfile {
 			properties: WindowRelativeProfileProperties {
 				id: id.to_string(),
@@ -46,7 +50,8 @@ impl WindowRelativeProfile {
 				on_open: Vec::new(),
 				on_activate: Vec::new(),
 				on_deactivate: Vec::new()
-			}
+			},
+			task_system
 		}
 	}
 
@@ -71,6 +76,12 @@ impl WindowRelativeProfile {
 	/// Add a profile deactivate event handler.
 	pub fn with_deactivate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send + 'static {
 		self.event_handlers.on_deactivate.push(Box::new(handler));
+		self
+	}
+
+	/// Add a task-syncer task.
+	pub fn with_task(mut self, task:Task) -> Self {
+		self.task_system.add_task(task);
 		self
 	}
 
@@ -102,6 +113,11 @@ impl WindowRelativeProfile {
 		(self.properties.active_checker)(&self.properties, active_process_name, active_process_title)
 	}
 
+	/// Add a task to the task-system.
+	pub fn schedule_task(&mut self, task:Task) {
+		self.task_system.add_task(task);
+	}
+
 
 
 	/* EVENT HANDLER METHODS */
@@ -121,6 +137,7 @@ impl WindowRelativeProfile {
 			self.trigger_open_event()?;
 		}
 		self.properties.is_active = true;
+		self.task_system.resume();
 		for handler in &self.event_handlers.on_activate {
 			handler(&mut self.properties)?;
 		}
@@ -130,6 +147,7 @@ impl WindowRelativeProfile {
 	/// The profile was deactivated.
 	pub(crate) fn trigger_deactivate_event(&mut self) -> WindowRelativeEventResponse {
 		self.properties.is_active = false;
+		self.task_system.pause();
 		for handler in &self.event_handlers.on_deactivate {
 			handler(&mut self.properties)?;
 		}

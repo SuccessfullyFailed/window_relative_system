@@ -1,3 +1,3 @@
 pub fn main() {
-	window_relative_system::WindowRelativeSystem::start(false);
+	window_relative_system::WindowRelativeSystem::run();
 }

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-winapi={ version="0.3", features=["winuser"] }
 window_controller={ git="https://github.com/SuccessfullyFailed/window_controller" }
+task_syncer={ git="https://github.com/SuccessfullyFailed/task_syncer" }
+winapi={ version="0.3", features=["winuser"] }
 ctor="0.2.7"

@@ -33,6 +33,10 @@ pub fn install(create_thread:bool) {
 			}
 			*hook_installed = true;
 
+			// Figure out initial profile.
+			let window_controller:WindowController = WindowController::active();
+			WindowRelativeSystem::update_profile(window_controller);
+
 			// Keep listening for messages on hook.
 			let mut msg:MSG = mem::zeroed();
 			while GetMessageW(&mut msg, null_mut(), 0, 0) > 0 {
