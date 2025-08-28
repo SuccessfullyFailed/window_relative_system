@@ -1,4 +1,4 @@
-use task_syncer::{Task, TaskSystem};
+use task_syncer::{ Task, TaskSystem };
 use std::error::Error;
 
 
@@ -6,13 +6,15 @@ use std::error::Error;
 type WindowRelativeEventResponse = Result<(), Box<dyn Error>>;
 type WindowRelativeEventHandler = dyn Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send;
 type WindowRelativeEventHandlers = Vec<Box<WindowRelativeEventHandler>>;
+type NamedOperationReturnType = Result<(), Box<dyn Error>>;
 
 
 
 pub struct WindowRelativeProfile {
 	properties: WindowRelativeProfileProperties,
 	event_handlers:WindowRelativeProfileEventHandlers,
-	pub(crate) task_system:TaskSystem
+	pub(crate) task_system:TaskSystem,
+	pub(crate) named_operations:Vec<(String, Box<dyn Fn() -> NamedOperationReturnType + Send>)>
 }
 pub struct WindowRelativeProfileProperties {
 	id:String,
@@ -51,7 +53,8 @@ impl WindowRelativeProfile {
 				on_activate: Vec::new(),
 				on_deactivate: Vec::new()
 			},
-			task_system
+			task_system,
+			named_operations: Vec::new()
 		}
 	}
 
@@ -61,27 +64,33 @@ impl WindowRelativeProfile {
 		self
 	}
 
-	/// Add a profile open event handler.
+	/// Return self with an additional profile open event handler.
 	pub fn with_open_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send + 'static {
 		self.event_handlers.on_open.push(Box::new(handler));
 		self
 	}
 
-	/// Add a profile activate event handler.
+	/// Return self with an additional profile activate event handler.
 	pub fn with_activate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send + 'static {
 		self.event_handlers.on_activate.push(Box::new(handler));
 		self
 	}
 
-	/// Add a profile deactivate event handler.
+	/// Return self with an additional profile deactivate event handler.
 	pub fn with_deactivate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send + 'static {
 		self.event_handlers.on_deactivate.push(Box::new(handler));
 		self
 	}
 
-	/// Add a task-syncer task.
+	/// Return self with an additional task-syncer task.
 	pub fn with_task(mut self, task:Task) -> Self {
 		self.task_system.add_task(task);
+		self
+	}
+
+	/// Return self with an additional named operation.
+	pub fn with_named_operation<T>(mut self, name:&str, operation:T) -> Self where T:Fn() -> NamedOperationReturnType + Send + 'static {
+		self.add_named_operation(name, operation);
 		self
 	}
 
@@ -116,6 +125,16 @@ impl WindowRelativeProfile {
 	/// Add a task to the task-system.
 	pub fn schedule_task(&mut self, task:Task) {
 		self.task_system.add_task(task);
+	}
+
+	/// Add a named operation.
+	pub fn add_named_operation<T>(&mut self, name:&str, operation:T) where T:Fn() -> NamedOperationReturnType + Send + 'static {
+		self.named_operations.push((name.to_string(), Box::new(operation)));
+	}
+
+	/// Execute an operation by its name.
+	pub fn execute_named_operation(&mut self, name:&str) -> Option<NamedOperationReturnType> {
+		self.named_operations.iter().find(|(operation_name, _)| name == operation_name).map(|(_, operation)| operation())
 	}
 
 
