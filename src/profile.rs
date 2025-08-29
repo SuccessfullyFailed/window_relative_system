@@ -3,9 +3,9 @@ use std::error::Error;
 
 
 
-type WindowRelativeEventResponse = Result<(), Box<dyn Error>>;
-type WindowRelativeEventHandler = dyn Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send;
-type WindowRelativeEventHandlers = Vec<Box<WindowRelativeEventHandler>>;
+type EventHandlerResponse = Result<(), Box<dyn Error>>;
+type EventHandler = dyn Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send;
+type EventHandlerList = Vec<Box<EventHandler>>;
 type NamedOperationReturnType = Result<(), Box<dyn Error>>;
 
 
@@ -27,9 +27,9 @@ pub struct WindowRelativeProfileProperties {
 	is_active:bool
 }
 pub struct WindowRelativeProfileEventHandlers {
-	on_open:WindowRelativeEventHandlers,
-	on_activate:WindowRelativeEventHandlers,
-	on_deactivate:WindowRelativeEventHandlers
+	on_open:EventHandlerList,
+	on_activate:EventHandlerList,
+	on_deactivate:EventHandlerList
 }
 impl WindowRelativeProfile {
 
@@ -73,19 +73,19 @@ impl WindowRelativeProfile {
 	}
 
 	/// Return self with an additional profile open event handler.
-	pub fn with_open_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send + 'static {
+	pub fn with_open_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + 'static {
 		self.event_handlers.on_open.push(Box::new(handler));
 		self
 	}
 
 	/// Return self with an additional profile activate event handler.
-	pub fn with_activate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send + 'static {
+	pub fn with_activate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + 'static {
 		self.event_handlers.on_activate.push(Box::new(handler));
 		self
 	}
 
 	/// Return self with an additional profile deactivate event handler.
-	pub fn with_deactivate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> WindowRelativeEventResponse + Send + 'static {
+	pub fn with_deactivate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + 'static {
 		self.event_handlers.on_deactivate.push(Box::new(handler));
 		self
 	}
@@ -155,7 +155,7 @@ impl WindowRelativeProfile {
 	/* EVENT HANDLER METHODS */
 
 	/// The profile was opened.
-	pub(crate) fn trigger_open_event(&mut self) -> WindowRelativeEventResponse {
+	pub(crate) fn trigger_open_event(&mut self) -> EventHandlerResponse {
 		self.properties.is_opened = true;
 		for handler in &self.event_handlers.on_open {
 			handler(&mut self.properties)?;
@@ -164,7 +164,7 @@ impl WindowRelativeProfile {
 	}
 
 	/// The profile was activated.
-	pub(crate) fn trigger_activate_event(&mut self) -> WindowRelativeEventResponse {
+	pub(crate) fn trigger_activate_event(&mut self) -> EventHandlerResponse {
 		if !self.properties.is_opened {
 			self.trigger_open_event()?;
 		}
@@ -177,7 +177,7 @@ impl WindowRelativeProfile {
 	}
 
 	/// The profile was deactivated.
-	pub(crate) fn trigger_deactivate_event(&mut self) -> WindowRelativeEventResponse {
+	pub(crate) fn trigger_deactivate_event(&mut self) -> EventHandlerResponse {
 		self.properties.is_active = false;
 		self.task_system.pause();
 		for handler in &self.event_handlers.on_deactivate {
