@@ -20,6 +20,7 @@ pub struct WindowRelativeProfileProperties {
 	id:String,
 	title:String,
 	process_name:String,
+	is_default_profile:bool,
 	
 	active_checker:Box<dyn Fn(&WindowRelativeProfileProperties, &str, &str) -> bool + Send>,
 	is_opened:bool,
@@ -43,7 +44,8 @@ impl WindowRelativeProfile {
 				id: id.to_string(),
 				title: title.to_string(),
 				process_name: process_name.to_string(),
-				
+				is_default_profile: false,
+
 				active_checker: Box::new(|_self, active_process_name, _active_process_title| active_process_name == _self.process_name),
 				is_opened: false,
 				is_active: false
@@ -56,6 +58,12 @@ impl WindowRelativeProfile {
 			task_system,
 			named_operations: Vec::new()
 		}
+	}
+
+	/// Add a small tag indicating that this is the default profile and not linked to any actual process.
+	pub fn with_is_default_profile(mut self) -> Self {
+		self.properties.is_default_profile = true;
+		self
 	}
 
 	/// Replace the active checker and return self.
@@ -111,6 +119,11 @@ impl WindowRelativeProfile {
 	/// Get the process-name of the profile.
 	pub fn process_name(&self) -> &str {
 		&self.properties.process_name
+	}
+
+	/// Whether or not this is the default profile.
+	pub fn is_default_profile(&self) -> bool {
+		self.properties.is_default_profile
 	}
 
 
