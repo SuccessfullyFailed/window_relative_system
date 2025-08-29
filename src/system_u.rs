@@ -119,7 +119,6 @@ use crate::{ WindowRelativeProfile, WindowRelativeSystem };
 	#[test]
 	fn test_system_execute_named_operation_on_profile_by_id() {
 		static VALIDATOR:Mutex<bool> = Mutex::new(false);
-		await_test_profile();
 
 		let mut profile:WindowRelativeProfile = WindowRelativeProfile::new("test_3", "", "");
 		profile.add_named_operation("test_operation_by_id", || { *VALIDATOR.lock().unwrap() = true; Ok(()) });
@@ -134,7 +133,6 @@ use crate::{ WindowRelativeProfile, WindowRelativeSystem };
 	fn test_system_execute_named_operation_on_all_profiles() {
 		static VALIDATOR_A:Mutex<bool> = Mutex::new(false);
 		static VALIDATOR_B:Mutex<bool> = Mutex::new(false);
-		await_test_profile();
 
 		let mut profile_a:WindowRelativeProfile = WindowRelativeProfile::new("test_3", "", "");
 		let mut profile_b:WindowRelativeProfile = WindowRelativeProfile::new("test_3", "", "");
