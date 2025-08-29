@@ -28,7 +28,7 @@ impl WindowRelativeSystem {
 
 		// Repeat indefinitely.
 		loop {
-			let mut sleep_time:Duration = Duration::from_millis(0);
+			let mut sleep_time:Option<Duration> = None;
 			{
 				let loop_start:Instant = Instant::now();
 
@@ -43,12 +43,14 @@ impl WindowRelativeSystem {
 				let loop_end:Instant = loop_start + system.interval;
 				let now:Instant = Instant::now();
 				if now < loop_end {
-					sleep_time = loop_end - now;
+					sleep_time = Some(loop_end - now);
 				}
 			}
 
 			// Sleep designated sleep-time.
-			sleep(sleep_time);
+			if let Some(sleep_time) = sleep_time {
+				sleep(sleep_time);
+			}
 		}
 	}
 
