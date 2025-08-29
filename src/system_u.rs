@@ -134,8 +134,8 @@ use crate::{ WindowRelativeProfile, WindowRelativeSystem };
 		static VALIDATOR_A:Mutex<bool> = Mutex::new(false);
 		static VALIDATOR_B:Mutex<bool> = Mutex::new(false);
 
-		let mut profile_a:WindowRelativeProfile = WindowRelativeProfile::new("test_3", "", "");
-		let mut profile_b:WindowRelativeProfile = WindowRelativeProfile::new("test_3", "", "");
+		let mut profile_a:WindowRelativeProfile = WindowRelativeProfile::new("test_4", "", "");
+		let mut profile_b:WindowRelativeProfile = WindowRelativeProfile::new("test_5", "", "");
 		profile_a.add_named_operation("test_operation_all_profiles", || { *VALIDATOR_A.lock().unwrap() = true; Ok(()) });
 		profile_b.add_named_operation("test_operation_all_profiles", || { *VALIDATOR_B.lock().unwrap() = true; Ok(()) });
 		WindowRelativeSystem::add_profile(profile_a);
