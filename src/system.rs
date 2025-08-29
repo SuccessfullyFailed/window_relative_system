@@ -1,18 +1,18 @@
-use std::{ error::Error, sync::{ Mutex, MutexGuard }, thread::sleep, time::{Duration, Instant} };
+use std::{ error::Error, sync::{ Mutex, MutexGuard }, thread::sleep, time::{ Duration, Instant } };
 use crate::{ window_hook, WindowRelativeProfile };
 use window_controller::WindowController;
 
 
 
 static SYSTEM_INST:Mutex<Option<WindowRelativeSystem>> = Mutex::new(None);
-pub(crate) const DEFAULT_ERROR_HANDLER:&dyn Fn(&WindowRelativeProfile, &str, &dyn Error) = &|profile, event_name, error| eprintln!("Profile {} panicked in {} event: {}", profile.id(), event_name, error);
+pub(crate) const DEFAULT_ERROR_HANDLER:&dyn Fn(&WindowRelativeProfile, &str, &str) = &|profile, event_name, error| eprintln!("Profile {} panicked in {} event: {}", profile.id(), event_name, error);
 
 
 
 pub struct WindowRelativeSystem {
 	profiles:Vec<WindowRelativeProfile>,
 	active_profile_index:usize,
-	error_handler:Box<dyn Fn(&WindowRelativeProfile, &str, &dyn Error) + Send>,
+	error_handler:Box<dyn Fn(&WindowRelativeProfile, &str, &str) + Send>,
 	interval:Duration
 }
 impl WindowRelativeSystem {
@@ -78,11 +78,11 @@ impl WindowRelativeSystem {
 			// Profile change.
 			if active_profile_index != system.active_profile_index {
 				if let Err(error) = system.profiles[system.active_profile_index].trigger_deactivate_event() {
-					(system.error_handler)(&system.profiles[system.active_profile_index], "activate", &*error);
+					(system.error_handler)(&system.profiles[system.active_profile_index], "activate", &error.to_string());
 				}
 				system.active_profile_index = active_profile_index;
 				if let Err(error) = system.profiles[system.active_profile_index].trigger_activate_event() {
-					(system.error_handler)(&system.profiles[system.active_profile_index], "deactivate", &*error);
+					(system.error_handler)(&system.profiles[system.active_profile_index], "deactivate", &error.to_string());
 				}
 			}
 		});
@@ -118,6 +118,16 @@ impl WindowRelativeSystem {
 		});
 	}
 
+	/// Execute an action on a profile by id. Uses system error handler if profile cannot be found.
+	pub fn execute_on_profile_by_id<T>(profile_id:&str, action:T) where T:Fn(&WindowRelativeProfile) {
+		Self::execute_on_system(|system| {
+			match system.profiles.iter().find(|profile| profile.id() == profile_id) {
+				Some(profile) => action(profile),
+				None => (system.error_handler)(&system.profiles[system.active_profile_index], "action on profile by id", &format!("Could not find profile by id '{profile_id}'."))
+			}
+		});
+	}
+
 	/// Execute an action on all profiles. Excludes the DefaultProfile.
 	pub fn execute_on_all_profiles<T>(action:T) where T:Fn(&WindowRelativeProfile) {
 		Self::execute_on_system(|system| {
@@ -132,7 +142,22 @@ impl WindowRelativeSystem {
 		Self::execute_on_system(|system| {
 			let operation_result:Result<(), Box<dyn Error>> = system.profiles[system.active_profile_index].execute_named_operation(name).unwrap_or(Err(format!("Operation '{name}' not found on current profile.").into()));
 			if let Err(error) = operation_result {
-				(system.error_handler)(&system.profiles[system.active_profile_index], "named operation execution", &*error);
+				(system.error_handler)(&system.profiles[system.active_profile_index], "named operation execution", &error.to_string());
+			}
+		});
+	}
+
+	/// Execute an action on a profile by id. Uses system error handler if profile cannot be found.
+	pub fn execute_named_operation_on_profile_by_id(profile_id:&str, name:&str) {
+		Self::execute_on_system(|system| {
+			match system.profiles.iter_mut().find(|profile| profile.id() == profile_id) {
+				Some(profile) => {
+					let operation_result:Result<(), Box<dyn Error>> = profile.execute_named_operation(name).unwrap_or(Err(format!("Operation '{name}' not found on current profile.").into()));
+					if let Err(error) = operation_result {
+						(system.error_handler)(&system.profiles[system.active_profile_index], "named operation execution", &error.to_string());
+					}
+				},
+				None => (system.error_handler)(&system.profiles[system.active_profile_index], "action on profile by id", &format!("Could not find profile by id '{profile_id}'."))
 			}
 		});
 	}
@@ -143,7 +168,7 @@ impl WindowRelativeSystem {
 			for profile_index in 1..system.profiles.len() {
 				if let Some(result) = system.profiles[profile_index].execute_named_operation(name) {
 					if let Err(error) = result {
-						(system.error_handler)(&system.profiles[system.active_profile_index], "named operation execution", &*error);
+						(system.error_handler)(&system.profiles[system.active_profile_index], "named operation execution", &error.to_string());
 					}
 				}
 			}
@@ -154,7 +179,7 @@ impl Default for WindowRelativeSystem {
 	fn default() -> Self {
 		WindowRelativeSystem {
 			profiles: vec![
-				WindowRelativeProfile::new("DEFAULT_PROFILE_ID", "DEFAULT_PROFILE_TITLE", "DEFAULT_PROFILE_PROCESS_NAME").with_active_checker(|_, _, _| false)
+				WindowRelativeProfile::new("DEFAULT_PROFILE_ID", "DEFAULT_PROFILE_TITLE", "DEFAULT_PROFILE_PROCESS_NAME").with_active_checker(|_, _, _| false).with_is_default_profile()
 			],
 			active_profile_index: 0,
 			error_handler: Box::new(|profile, event_name, error| DEFAULT_ERROR_HANDLER(profile, event_name, error)),
