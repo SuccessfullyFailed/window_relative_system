@@ -10,12 +10,6 @@ type NamedOperationReturnType = Result<(), Box<dyn Error>>;
 
 
 
-pub struct WindowRelativeProfile {
-	properties: WindowRelativeProfileProperties,
-	event_handlers:WindowRelativeProfileEventHandlers,
-	pub(crate) task_system:TaskSystem,
-	pub(crate) named_operations:Vec<(String, Box<dyn Fn() -> NamedOperationReturnType + Send>)>
-}
 pub struct WindowRelativeProfileProperties {
 	id:String,
 	title:String,
@@ -26,10 +20,46 @@ pub struct WindowRelativeProfileProperties {
 	is_opened:bool,
 	is_active:bool
 }
+impl WindowRelativeProfileProperties {
+
+	/* PROPERTY GETTER METHODS */
+
+	/// Get the ID of the profile.
+	pub fn id(&self) -> &str {
+		&self.id
+	}
+
+	/// Get the title of the profile.
+	pub fn title(&self) -> &str {
+		&self.title
+	}
+
+	/// Get the process-name of the profile.
+	pub fn process_name(&self) -> &str {
+		&self.process_name
+	}
+
+	/// Whether or not this is the default profile.
+	pub fn is_default_profile(&self) -> bool {
+		self.is_default_profile
+	}
+}
+
+
+
 pub struct WindowRelativeProfileEventHandlers {
 	on_open:EventHandlerList,
 	on_activate:EventHandlerList,
 	on_deactivate:EventHandlerList
+}
+
+
+
+pub struct WindowRelativeProfile {
+	properties: WindowRelativeProfileProperties,
+	event_handlers:WindowRelativeProfileEventHandlers,
+	pub(crate) task_system:TaskSystem,
+	pub(crate) named_operations:Vec<(String, Box<dyn Fn() -> NamedOperationReturnType + Send>)>
 }
 impl WindowRelativeProfile {
 
@@ -108,22 +138,22 @@ impl WindowRelativeProfile {
 
 	/// Get the ID of the profile.
 	pub fn id(&self) -> &str {
-		&self.properties.id
+		self.properties.id()
 	}
 
 	/// Get the title of the profile.
 	pub fn title(&self) -> &str {
-		&self.properties.title
+		self.properties.title()
 	}
 
 	/// Get the process-name of the profile.
 	pub fn process_name(&self) -> &str {
-		&self.properties.process_name
+		self.properties.process_name()
 	}
 
 	/// Whether or not this is the default profile.
 	pub fn is_default_profile(&self) -> bool {
-		self.properties.is_default_profile
+		self.properties.is_default_profile()
 	}
 
 
