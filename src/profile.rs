@@ -10,51 +10,6 @@ type NamedOperationReturnType = Result<(), Box<dyn Error>>;
 
 
 
-pub struct WindowRelativeProfileProperties {
-	id:String,
-	title:String,
-	process_name:String,
-	is_default_profile:bool,
-	
-	active_checker:Box<dyn Fn(&WindowRelativeProfileProperties, &str, &str) -> bool + Send>,
-	is_opened:bool,
-	is_active:bool
-}
-impl WindowRelativeProfileProperties {
-
-	/* PROPERTY GETTER METHODS */
-
-	/// Get the ID of the profile.
-	pub fn id(&self) -> &str {
-		&self.id
-	}
-
-	/// Get the title of the profile.
-	pub fn title(&self) -> &str {
-		&self.title
-	}
-
-	/// Get the process-name of the profile.
-	pub fn process_name(&self) -> &str {
-		&self.process_name
-	}
-
-	/// Whether or not this is the default profile.
-	pub fn is_default_profile(&self) -> bool {
-		self.is_default_profile
-	}
-}
-
-
-
-pub struct WindowRelativeProfileEventHandlers {
-	on_open:EventHandlerList,
-	on_activate:EventHandlerList,
-	on_deactivate:EventHandlerList
-}
-
-
-
 pub struct WindowRelativeProfile {
 	properties: WindowRelativeProfileProperties,
 	event_handlers:WindowRelativeProfileEventHandlers,
@@ -215,4 +170,49 @@ impl WindowRelativeProfile {
 		}
 		Ok(())
 	}
+}
+
+
+
+pub struct WindowRelativeProfileProperties {
+	id:String,
+	title:String,
+	process_name:String,
+	is_default_profile:bool,
+	
+	active_checker:Box<dyn Fn(&WindowRelativeProfileProperties, &str, &str) -> bool + Send>,
+	is_opened:bool,
+	is_active:bool
+}
+impl WindowRelativeProfileProperties {
+
+	/* PROPERTY GETTER METHODS */
+
+	/// Get the ID of the profile.
+	pub fn id(&self) -> &str {
+		&self.id
+	}
+
+	/// Get the title of the profile.
+	pub fn title(&self) -> &str {
+		&self.title
+	}
+
+	/// Get the process-name of the profile.
+	pub fn process_name(&self) -> &str {
+		&self.process_name
+	}
+
+	/// Whether or not this is the default profile.
+	pub fn is_default_profile(&self) -> bool {
+		self.is_default_profile
+	}
+}
+
+
+
+pub struct WindowRelativeProfileEventHandlers {
+	on_open:EventHandlerList,
+	on_activate:EventHandlerList,
+	on_deactivate:EventHandlerList
 }
