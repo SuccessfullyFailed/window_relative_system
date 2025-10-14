@@ -5,6 +5,7 @@ use window_controller::WindowController;
 
 
 static SYSTEM_INST:Mutex<Option<WindowRelativeSystem>> = Mutex::new(None);
+static RUN_LOCK:Mutex<bool> = Mutex::new(false);
 pub(crate) const DEFAULT_ERROR_HANDLER:&dyn Fn(&WindowRelativeProfile, &str, &str) = &|profile, event_name, error| eprintln!("Profile {} panicked in {} event: {}", profile.id(), event_name, error);
 
 
@@ -21,9 +22,18 @@ impl WindowRelativeSystem {
 
 	/// Run the system. Installs the hook that triggers events in profiles.
 	pub fn run() {
-		window_hook::install(true);
+
+		// Get run lock, ensuring no async running of the system.
+		let mut run_lock_handle:MutexGuard<'_, bool> = RUN_LOCK.lock().unwrap();
+		if *run_lock_handle {
+			eprintln!("Cannot run WindowRelativeSystem twice at the same time.");
+			return;
+		}
+		*run_lock_handle = true;
+		drop(run_lock_handle);
 
 		// Ensure system existence.
+		window_hook::install(true);
 		Self::execute_on_system(|_| {});
 
 		// Repeat indefinitely.

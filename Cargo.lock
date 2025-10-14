@@ -23,9 +23,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.40"
+version = "1.0.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1885c039570dc00dcb4ff087a89e185fd56bae234ddc7f056a945bf36467248d"
+checksum = "ce25767e7b499d1b604768e7cde645d14cc8584231ea6b295e9c9eb22c02e1d1"
 dependencies = [
  "proc-macro2",
 ]
@@ -43,14 +43,14 @@ dependencies = [
 
 [[package]]
 name = "task_syncer"
-version = "0.1.0"
-source = "git+https://github.com/SuccessfullyFailed/task_syncer#d85eaeb430d53fc24ee3daef2d401682ef4f3224"
+version = "0.1.1"
+source = "git+https://github.com/SuccessfullyFailed/task_syncer#bd40477685f2fa5017ed65cef63dc1f1d4807e8b"
 
 [[package]]
 name = "unicode-ident"
-version = "1.0.18"
+version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a5f39404a5da50712a4c1eecf25e90dd62b613502b7e925fd4e4d19b5c96512"
+checksum = "f63a545481291138910575129486daeaf8ac54aee4387fe7906919f7830c7d9d"
 
 [[package]]
 name = "winapi"
