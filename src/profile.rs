@@ -4,7 +4,7 @@ use std::error::Error;
 
 
 type EventHandlerResponse = Result<(), Box<dyn Error>>;
-type EventHandler = dyn Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send;
+type EventHandler = dyn Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + Sync;
 type EventHandlerList = Vec<Box<EventHandler>>;
 type NamedOperationReturnType = Result<(), Box<dyn Error>>;
 
@@ -14,7 +14,7 @@ pub struct WindowRelativeProfile {
 	properties: WindowRelativeProfileProperties,
 	event_handlers:WindowRelativeProfileEventHandlers,
 	pub(crate) task_system:TaskSystem,
-	pub(crate) named_operations:Vec<(String, Box<dyn Fn(&WindowRelativeProfileProperties) -> NamedOperationReturnType + Send>)>
+	pub(crate) named_operations:Vec<(String, Box<dyn Fn(&WindowRelativeProfileProperties) -> NamedOperationReturnType + Send + Sync>)>
 }
 impl WindowRelativeProfile {
 
@@ -52,25 +52,25 @@ impl WindowRelativeProfile {
 	}
 
 	/// Replace the active checker and return self.
-	pub fn with_active_checker<T>(mut self, active_checker:T) -> Self where T:Fn(&WindowRelativeProfileProperties, &str, &str) -> bool + Send + 'static {
+	pub fn with_active_checker<T>(mut self, active_checker:T) -> Self where T:Fn(&WindowRelativeProfileProperties, &str, &str) -> bool + Send + Sync + 'static {
 		self.properties.active_checker = Box::new(active_checker);
 		self
 	}
 
 	/// Return self with an additional profile open event handler.
-	pub fn with_open_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + 'static {
+	pub fn with_open_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + Sync + 'static {
 		self.event_handlers.on_open.push(Box::new(handler));
 		self
 	}
 
 	/// Return self with an additional profile activate event handler.
-	pub fn with_activate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + 'static {
+	pub fn with_activate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + Sync + 'static {
 		self.event_handlers.on_activate.push(Box::new(handler));
 		self
 	}
 
 	/// Return self with an additional profile deactivate event handler.
-	pub fn with_deactivate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + 'static {
+	pub fn with_deactivate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + Sync + 'static {
 		self.event_handlers.on_deactivate.push(Box::new(handler));
 		self
 	}
@@ -82,7 +82,7 @@ impl WindowRelativeProfile {
 	}
 
 	/// Return self with an additional named operation.
-	pub fn with_named_operation<T>(mut self, name:&str, operation:T) -> Self where T:Fn(&WindowRelativeProfileProperties) -> NamedOperationReturnType + Send + 'static {
+	pub fn with_named_operation<T>(mut self, name:&str, operation:T) -> Self where T:Fn(&WindowRelativeProfileProperties) -> NamedOperationReturnType + Send + Sync + 'static {
 		self.add_named_operation(name, operation);
 		self
 	}
@@ -126,7 +126,7 @@ impl WindowRelativeProfile {
 	}
 
 	/// Add a named operation.
-	pub fn add_named_operation<T>(&mut self, name:&str, operation:T) where T:Fn(&WindowRelativeProfileProperties) -> NamedOperationReturnType + Send + 'static {
+	pub fn add_named_operation<T>(&mut self, name:&str, operation:T) where T:Fn(&WindowRelativeProfileProperties) -> NamedOperationReturnType + Send + Sync + 'static {
 		self.named_operations.push((name.to_string(), Box::new(operation)));
 	}
 
@@ -180,7 +180,7 @@ pub struct WindowRelativeProfileProperties {
 	process_name:String,
 	is_default_profile:bool,
 	
-	active_checker:Box<dyn Fn(&WindowRelativeProfileProperties, &str, &str) -> bool + Send>,
+	active_checker:Box<dyn Fn(&WindowRelativeProfileProperties, &str, &str) -> bool + Send + Sync>,
 	is_opened:bool,
 	is_active:bool
 }
