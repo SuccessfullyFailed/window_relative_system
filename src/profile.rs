@@ -14,7 +14,7 @@ pub struct WindowRelativeProfile {
 	properties: WindowRelativeProfileProperties,
 	event_handlers:WindowRelativeProfileEventHandlers,
 	pub(crate) task_system:TaskSystem,
-	pub(crate) named_operations:Vec<(String, Box<dyn Fn() -> NamedOperationReturnType + Send>)>
+	pub(crate) named_operations:Vec<(String, Box<dyn Fn(&WindowRelativeProfileProperties) -> NamedOperationReturnType + Send>)>
 }
 impl WindowRelativeProfile {
 
@@ -82,7 +82,7 @@ impl WindowRelativeProfile {
 	}
 
 	/// Return self with an additional named operation.
-	pub fn with_named_operation<T>(mut self, name:&str, operation:T) -> Self where T:Fn() -> NamedOperationReturnType + Send + 'static {
+	pub fn with_named_operation<T>(mut self, name:&str, operation:T) -> Self where T:Fn(&WindowRelativeProfileProperties) -> NamedOperationReturnType + Send + 'static {
 		self.add_named_operation(name, operation);
 		self
 	}
@@ -126,13 +126,13 @@ impl WindowRelativeProfile {
 	}
 
 	/// Add a named operation.
-	pub fn add_named_operation<T>(&mut self, name:&str, operation:T) where T:Fn() -> NamedOperationReturnType + Send + 'static {
+	pub fn add_named_operation<T>(&mut self, name:&str, operation:T) where T:Fn(&WindowRelativeProfileProperties) -> NamedOperationReturnType + Send + 'static {
 		self.named_operations.push((name.to_string(), Box::new(operation)));
 	}
 
 	/// Execute an operation by its name.
 	pub fn execute_named_operation(&mut self, name:&str) -> Option<NamedOperationReturnType> {
-		self.named_operations.iter().find(|(operation_name, _)| name == operation_name).map(|(_, operation)| operation())
+		self.named_operations.iter().find(|(operation_name, _)| name == operation_name).map(|(_, operation)| operation(&self.properties))
 	}
 
 

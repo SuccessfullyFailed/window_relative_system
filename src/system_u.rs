@@ -107,7 +107,7 @@ use crate::{ WindowRelativeProfile, WindowRelativeSystem };
 		
 		let active_window:WindowController = WindowController::active();
 		let mut profile:WindowRelativeProfile = WindowRelativeProfile::new("dummy_current_profile", &active_window.title(), &active_window.process_name().expect("Could not get current window process name"));
-		profile.add_named_operation("test_operation_current", || { *VALIDATOR.lock().unwrap() = true; Ok(()) });
+		profile.add_named_operation("test_operation_current", |_profile| { *VALIDATOR.lock().unwrap() = true; Ok(()) });
 		WindowRelativeSystem::add_profile(profile);
 
 		WindowRelativeSystem::update_profile(active_window);
@@ -121,7 +121,7 @@ use crate::{ WindowRelativeProfile, WindowRelativeSystem };
 		static VALIDATOR:Mutex<bool> = Mutex::new(false);
 
 		let mut profile:WindowRelativeProfile = WindowRelativeProfile::new("test_3", "", "");
-		profile.add_named_operation("test_operation_by_id", || { *VALIDATOR.lock().unwrap() = true; Ok(()) });
+		profile.add_named_operation("test_operation_by_id", |_profile| { *VALIDATOR.lock().unwrap() = true; Ok(()) });
 		WindowRelativeSystem::add_profile(profile);
 
 		WindowRelativeSystem::execute_named_operation_on_profile_by_id("test_3", "test_operation_by_id");
@@ -136,8 +136,8 @@ use crate::{ WindowRelativeProfile, WindowRelativeSystem };
 
 		let mut profile_a:WindowRelativeProfile = WindowRelativeProfile::new("test_4", "", "");
 		let mut profile_b:WindowRelativeProfile = WindowRelativeProfile::new("test_5", "", "");
-		profile_a.add_named_operation("test_operation_all_profiles", || { *VALIDATOR_A.lock().unwrap() = true; Ok(()) });
-		profile_b.add_named_operation("test_operation_all_profiles", || { *VALIDATOR_B.lock().unwrap() = true; Ok(()) });
+		profile_a.add_named_operation("test_operation_all_profiles", |_profile| { *VALIDATOR_A.lock().unwrap() = true; Ok(()) });
+		profile_b.add_named_operation("test_operation_all_profiles", |_profile| { *VALIDATOR_B.lock().unwrap() = true; Ok(()) });
 		WindowRelativeSystem::add_profile(profile_a);
 		WindowRelativeSystem::add_profile(profile_b);
 

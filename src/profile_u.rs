@@ -32,7 +32,7 @@ mod tests {
 								.with_activate_handler(|_| { HISTORY.lock().unwrap().push("activate".to_string()); Ok(()) })
 								.with_deactivate_handler(|_| { HISTORY.lock().unwrap().push("deactivate".to_string()); Ok(()) })
 								.with_task(Task::new("test_task", |_| { HISTORY.lock().unwrap().push("handled task".to_string()); Ok(()) }))
-								.with_named_operation("test_operation_name", || { HISTORY.lock().unwrap().push("handled named operation".to_string()); Ok(()) });
+								.with_named_operation("test_operation_name", |_profile| { HISTORY.lock().unwrap().push("handled named operation".to_string()); Ok(()) });
 		assert_eq!(profile.id(), "test_id");
 		assert_eq!(profile.title(), "test_title");
 		assert_eq!(profile.process_name(), "test_process_name.exe");
