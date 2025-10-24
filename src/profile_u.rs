@@ -19,7 +19,9 @@ mod tests {
 		assert_eq!(profile.is_active("test_process_name.exe", "active_process_title"), true);
 		profile.trigger_activate_event().unwrap();
 		assert!(HISTORY.lock().unwrap().is_empty());
-		profile.trigger_deactivate_event().unwrap();
+		profile.trigger_deactivate_event(false).unwrap();
+		assert!(HISTORY.lock().unwrap().is_empty());
+		profile.trigger_deactivate_event(true).unwrap();
 		assert!(HISTORY.lock().unwrap().is_empty());
 		profile.trigger_open_event().unwrap();
 		assert!(HISTORY.lock().unwrap().is_empty());
@@ -31,6 +33,7 @@ mod tests {
 								.with_open_handler(|_| { HISTORY.lock().unwrap().push("open".to_string()); Ok(()) })
 								.with_activate_handler(|_| { HISTORY.lock().unwrap().push("activate".to_string()); Ok(()) })
 								.with_deactivate_handler(|_| { HISTORY.lock().unwrap().push("deactivate".to_string()); Ok(()) })
+								.with_close_handler(|_| { HISTORY.lock().unwrap().push("close".to_string()); Ok(()) })
 								.with_task(Task::new("test_task", |_| { HISTORY.lock().unwrap().push("handled task".to_string()); Ok(()) }))
 								.with_named_operation("test_operation_name", |_profile| { HISTORY.lock().unwrap().push("handled named operation".to_string()); Ok(()) });
 		assert_eq!(profile.id(), "test_id");
@@ -43,8 +46,11 @@ mod tests {
 		profile.trigger_activate_event().unwrap();
 		assert_eq!(HISTORY.lock().unwrap().remove(0), "open");
 		assert_eq!(HISTORY.lock().unwrap().remove(0), "activate");
-		profile.trigger_deactivate_event().unwrap();
+		profile.trigger_deactivate_event(false).unwrap();
 		assert_eq!(HISTORY.lock().unwrap().remove(0), "deactivate");
+		profile.trigger_deactivate_event(true).unwrap();
+		assert_eq!(HISTORY.lock().unwrap().remove(0), "deactivate");
+		assert_eq!(HISTORY.lock().unwrap().remove(0), "close");
 		profile.trigger_open_event().unwrap();
 		assert_eq!(HISTORY.lock().unwrap().remove(0), "open");
 	}

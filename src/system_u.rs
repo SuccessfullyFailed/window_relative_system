@@ -110,7 +110,7 @@ use crate::{ WindowRelativeProfile, WindowRelativeSystem };
 		profile.add_named_operation("test_operation_current", |_profile| { *VALIDATOR.lock().unwrap() = true; Ok(()) });
 		WindowRelativeSystem::add_profile(profile);
 
-		WindowRelativeSystem::update_profile(active_window);
+		WindowRelativeSystem::update_profile(active_window.clone(), active_window);
 		WindowRelativeSystem::execute_named_operation_on_current_profile("test_operation_current");
 
 		assert!(*VALIDATOR.lock().unwrap());

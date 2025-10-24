@@ -38,7 +38,8 @@ impl WindowRelativeProfile {
 			event_handlers: WindowRelativeProfileEventHandlers {
 				on_open: Vec::new(),
 				on_activate: Vec::new(),
-				on_deactivate: Vec::new()
+				on_deactivate: Vec::new(),
+				on_close: Vec::new()
 			},
 			task_system,
 			named_operations: Vec::new()
@@ -72,6 +73,12 @@ impl WindowRelativeProfile {
 	/// Return self with an additional profile deactivate event handler.
 	pub fn with_deactivate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + Sync + 'static {
 		self.event_handlers.on_deactivate.push(Box::new(handler));
+		self
+	}
+
+	/// Return self with an additional profile close event handler.
+	pub fn with_close_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + Sync + 'static {
+		self.event_handlers.on_close.push(Box::new(handler));
 		self
 	}
 
@@ -162,10 +169,22 @@ impl WindowRelativeProfile {
 	}
 
 	/// The profile was deactivated.
-	pub(crate) fn trigger_deactivate_event(&mut self) -> EventHandlerResponse {
+	pub(crate) fn trigger_deactivate_event(&mut self, window_was_closed:bool) -> EventHandlerResponse {
 		self.properties.is_active = false;
 		self.task_system.pause();
 		for handler in &self.event_handlers.on_deactivate {
+			handler(&mut self.properties)?;
+		}
+		if window_was_closed {
+			self.trigger_close_event()?;
+		}
+		Ok(())
+	}
+
+	/// The profile was closed.
+	pub(crate) fn trigger_close_event(&mut self) -> EventHandlerResponse {
+		self.properties.is_opened = false;
+		for handler in &self.event_handlers.on_close {
 			handler(&mut self.properties)?;
 		}
 		Ok(())
@@ -214,5 +233,6 @@ impl WindowRelativeProfileProperties {
 pub struct WindowRelativeProfileEventHandlers {
 	on_open:EventHandlerList,
 	on_activate:EventHandlerList,
-	on_deactivate:EventHandlerList
+	on_deactivate:EventHandlerList,
+	on_close:EventHandlerList
 }

@@ -8,6 +8,7 @@ use crate::WindowRelativeSystem;
 
 
 static HOOK_INSTALLED:Mutex<bool> = Mutex::new(false);
+static mut PREVIOUS_WINDOW:Option<WindowController> = None;
 
 
 
@@ -35,7 +36,8 @@ pub fn install(create_thread:bool) {
 
 			// Figure out initial profile.
 			let window_controller:WindowController = WindowController::active();
-			WindowRelativeSystem::update_profile(window_controller);
+			WindowRelativeSystem::update_profile(window_controller.clone(), window_controller.clone());
+			PREVIOUS_WINDOW = Some(window_controller);
 
 			// Keep listening for messages on hook.
 			let mut msg:MSG = mem::zeroed();
@@ -48,9 +50,14 @@ pub fn install(create_thread:bool) {
 }
 
 /// Handle a windows hook event to process changes in active window.
+#[allow(static_mut_refs)]
 unsafe extern "system" fn win_event_proc(_event_hook:HWINEVENTHOOK, event:DWORD, hwnd:HWND, _id_object:LONG, _id_child:LONG, _dw_event_thread:DWORD, _dwms_event_time:DWORD) {
-	if event == EVENT_SYSTEM_FOREGROUND {
-		let window_controller:WindowController = WindowController::from_hwnd(hwnd);
-		WindowRelativeSystem::update_profile(window_controller);
+	unsafe {
+		if event == EVENT_SYSTEM_FOREGROUND {
+			let window_controller:WindowController = WindowController::from_hwnd(hwnd);
+			let previous_window:WindowController = PREVIOUS_WINDOW.as_ref().unwrap().clone();
+			WindowRelativeSystem::update_profile(previous_window, window_controller.clone());
+			PREVIOUS_WINDOW = Some(window_controller);
+		}
 	}
 }

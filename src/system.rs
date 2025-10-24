@@ -79,7 +79,7 @@ impl WindowRelativeSystem {
 	}
 
 	/// Update the current profile.
-	pub fn update_profile(current_window:WindowController) {
+	pub fn update_profile(previous_window:WindowController, current_window:WindowController) {
 		Self::execute_on_system(|system| {
 
 			// Find active profile.
@@ -89,7 +89,7 @@ impl WindowRelativeSystem {
 
 			// Profile change.
 			if active_profile_index != system.active_profile_index {
-				if let Err(error) = system.profiles[system.active_profile_index].trigger_deactivate_event() {
+				if let Err(error) = system.profiles[system.active_profile_index].trigger_deactivate_event(!previous_window.is_visible()) {
 					(system.error_handler)(&system.profiles[system.active_profile_index], "activate", &error.to_string());
 				}
 				system.active_profile_index = active_profile_index;
