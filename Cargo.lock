@@ -43,8 +43,8 @@ dependencies = [
 
 [[package]]
 name = "task_syncer"
-version = "0.1.1"
-source = "git+https://github.com/SuccessfullyFailed/task_syncer#bd40477685f2fa5017ed65cef63dc1f1d4807e8b"
+version = "0.1.2"
+source = "git+https://github.com/SuccessfullyFailed/task_syncer#801cb974726cdad705121807f511f55301b06a4f"
 
 [[package]]
 name = "unicode-ident"
