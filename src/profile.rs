@@ -1,10 +1,10 @@
-use task_syncer::{ Task, TaskSystem };
+use task_syncer::{ Task, TaskScheduler, TaskSystem };
 use std::error::Error;
 
 
 
 type EventHandlerResponse = Result<(), Box<dyn Error>>;
-type EventHandler = dyn Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + Sync;
+type EventHandler = dyn Fn(&mut WindowRelativeProfileProperties, &TaskScheduler) -> EventHandlerResponse + Send + Sync;
 type EventHandlerList = Vec<Box<EventHandler>>;
 type NamedOperationReturnType = Result<(), Box<dyn Error>>;
 
@@ -59,25 +59,25 @@ impl WindowRelativeProfile {
 	}
 
 	/// Return self with an additional profile open event handler.
-	pub fn with_open_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + Sync + 'static {
+	pub fn with_open_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler) -> EventHandlerResponse + Send + Sync + 'static {
 		self.event_handlers.on_open.push(Box::new(handler));
 		self
 	}
 
 	/// Return self with an additional profile activate event handler.
-	pub fn with_activate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + Sync + 'static {
+	pub fn with_activate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler) -> EventHandlerResponse + Send + Sync + 'static {
 		self.event_handlers.on_activate.push(Box::new(handler));
 		self
 	}
 
 	/// Return self with an additional profile deactivate event handler.
-	pub fn with_deactivate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + Sync + 'static {
+	pub fn with_deactivate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler) -> EventHandlerResponse + Send + Sync + 'static {
 		self.event_handlers.on_deactivate.push(Box::new(handler));
 		self
 	}
 
 	/// Return self with an additional profile close event handler.
-	pub fn with_close_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties) -> EventHandlerResponse + Send + Sync + 'static {
+	pub fn with_close_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler) -> EventHandlerResponse + Send + Sync + 'static {
 		self.event_handlers.on_close.push(Box::new(handler));
 		self
 	}
@@ -150,7 +150,7 @@ impl WindowRelativeProfile {
 	pub(crate) fn trigger_open_event(&mut self) -> EventHandlerResponse {
 		self.properties.is_opened = true;
 		for handler in &self.event_handlers.on_open {
-			handler(&mut self.properties)?;
+			handler(&mut self.properties, self.task_system.task_scheduler())?;
 		}
 		Ok(())
 	}
@@ -163,7 +163,7 @@ impl WindowRelativeProfile {
 		self.properties.is_active = true;
 		self.task_system.resume();
 		for handler in &self.event_handlers.on_activate {
-			handler(&mut self.properties)?;
+			handler(&mut self.properties, self.task_system.task_scheduler())?;
 		}
 		Ok(())
 	}
@@ -173,7 +173,7 @@ impl WindowRelativeProfile {
 		self.properties.is_active = false;
 		self.task_system.pause();
 		for handler in &self.event_handlers.on_deactivate {
-			handler(&mut self.properties)?;
+			handler(&mut self.properties, self.task_system.task_scheduler())?;
 		}
 		if window_was_closed {
 			self.trigger_close_event()?;
@@ -185,7 +185,7 @@ impl WindowRelativeProfile {
 	pub(crate) fn trigger_close_event(&mut self) -> EventHandlerResponse {
 		self.properties.is_opened = false;
 		for handler in &self.event_handlers.on_close {
-			handler(&mut self.properties)?;
+			handler(&mut self.properties, self.task_system.task_scheduler())?;
 		}
 		Ok(())
 	}
