@@ -37,7 +37,6 @@ impl WindowRelativeSystem {
 		Self::execute_on_system(|_| {});
 
 		// Repeat indefinitely.
-		let mut triggered_events:Vec<String> = Vec::new();
 		loop {
 			let mut sleep_time:Option<Duration> = None;
 			{
@@ -48,7 +47,7 @@ impl WindowRelativeSystem {
 				let system:&mut WindowRelativeSystem = (*system_guard).as_mut().unwrap();
 
 				// Update system.
-				system.profiles[system.active_profile_index].task_system.run_once(&loop_start, &mut triggered_events);
+				system.profiles[system.active_profile_index].task_system.run_once(&loop_start);
 
 				// Wait until loop end target instant.
 				let loop_end:Instant = loop_start + system.interval;
