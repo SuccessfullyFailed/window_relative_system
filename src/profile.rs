@@ -1,4 +1,4 @@
-use task_syncer::{ Task, TaskScheduler, TaskSystem };
+use task_syncer::{ TaskLike, TaskScheduler, TaskSystem };
 use std::error::Error;
 
 
@@ -83,7 +83,7 @@ impl WindowRelativeProfile {
 	}
 
 	/// Return self with an additional task-syncer task.
-	pub fn with_task(mut self, task:Task) -> Self {
+	pub fn with_task<T:TaskLike + Send + Sync + 'static>(mut self, task:T) -> Self {
 		self.task_system.add_task(task);
 		self
 	}
@@ -128,7 +128,7 @@ impl WindowRelativeProfile {
 	}
 
 	/// Add a task to the task-system.
-	pub fn schedule_task(&mut self, task:Task) {
+	pub fn add_task<T:TaskLike + Send + Sync + 'static>(&mut self, task:T) {
 		self.task_system.add_task(task);
 	}
 
