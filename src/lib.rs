@@ -8,3 +8,5 @@ mod window_hook_u;
 
 pub use system::*;
 pub use profile::*;
+
+pub use task_syncer::{ Task, EventSubscription };
