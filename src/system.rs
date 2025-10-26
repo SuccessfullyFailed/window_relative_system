@@ -90,11 +90,13 @@ impl WindowRelativeSystem {
 			// Profile change.
 			if active_profile_index != system.active_profile_index {
 				if let Err(error) = system.profiles[system.active_profile_index].trigger_deactivate_event(!previous_window.is_visible()) {
-					(system.error_handler)(&system.profiles[system.active_profile_index], "activate", &error.to_string());
+					(system.error_handler)(&system.profiles[system.active_profile_index], "deactivate", &error.to_string());
 				}
 				system.active_profile_index = active_profile_index;
 				if let Err(error) = system.profiles[system.active_profile_index].trigger_activate_event() {
-					(system.error_handler)(&system.profiles[system.active_profile_index], "deactivate", &error.to_string());
+					(system.error_handler)(&system.profiles[system.active_profile_index], "activate", &error.to_string());
+					system.profiles[system.active_profile_index].task_system.resume();
+					system.profiles[system.active_profile_index].task_system.run_once(&Instant::now());
 				}
 			}
 		});

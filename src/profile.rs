@@ -1,5 +1,5 @@
 use task_syncer::{ TaskLike, TaskScheduler, TaskSystem };
-use std::error::Error;
+use std::{ error::Error, time::Instant };
 
 
 
@@ -151,19 +151,21 @@ impl WindowRelativeProfile {
 		for handler in &self.event_handlers.on_activate {
 			handler(&mut self.properties, self.task_system.task_scheduler())?;
 		}
+		self.task_system.run_once(&Instant::now());
 		Ok(())
 	}
 
 	/// The profile was deactivated.
 	pub(crate) fn trigger_deactivate_event(&mut self, window_was_closed:bool) -> EventHandlerResponse {
 		self.properties.is_active = false;
-		self.task_system.pause();
 		for handler in &self.event_handlers.on_deactivate {
 			handler(&mut self.properties, self.task_system.task_scheduler())?;
 		}
 		if window_was_closed {
 			self.trigger_close_event()?;
 		}
+		self.task_system.run_once(&Instant::now());
+		self.task_system.pause();
 		Ok(())
 	}
 
