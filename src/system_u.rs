@@ -1,8 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use window_controller::WindowController;
-
-use crate::{ WindowRelativeProfile, WindowRelativeSystem };
+	use crate::{ WindowRelativeProfile, WindowRelativeSystem };
 	use std::{ sync::Mutex, thread::sleep, time::Duration };
 
 
@@ -88,60 +86,6 @@ use crate::{ WindowRelativeProfile, WindowRelativeSystem };
 				*VALIDATOR_B.lock().unwrap() = true;
 			}
 		});
-
-		assert!(*VALIDATOR_A.lock().unwrap());
-		assert!(*VALIDATOR_B.lock().unwrap());
-	}
-
-
-
-	/* EXECUTE NAMED OPERATION TESTS */
-
-	#[test]
-	fn test_system_execute_named_operation_on_current_profile() {
-		static VALIDATOR:Mutex<bool> = Mutex::new(false);
-
-		// Do this test after all other tests have finished.
-		await_test_profile();
-		sleep(Duration::from_millis(100));
-		
-		let active_window:WindowController = WindowController::active();
-		let mut profile:WindowRelativeProfile = WindowRelativeProfile::new("dummy_current_profile", &active_window.title(), &active_window.process_name().expect("Could not get current window process name"));
-		profile.add_named_operation("test_operation_current", |_profile| { *VALIDATOR.lock().unwrap() = true; Ok(()) });
-		WindowRelativeSystem::add_profile(profile);
-
-		WindowRelativeSystem::update_profile(active_window.clone(), active_window);
-		WindowRelativeSystem::execute_named_operation_on_current_profile("test_operation_current");
-
-		assert!(*VALIDATOR.lock().unwrap());
-	}
-
-	#[test]
-	fn test_system_execute_named_operation_on_profile_by_id() {
-		static VALIDATOR:Mutex<bool> = Mutex::new(false);
-
-		let mut profile:WindowRelativeProfile = WindowRelativeProfile::new("test_3", "", "");
-		profile.add_named_operation("test_operation_by_id", |_profile| { *VALIDATOR.lock().unwrap() = true; Ok(()) });
-		WindowRelativeSystem::add_profile(profile);
-
-		WindowRelativeSystem::execute_named_operation_on_profile_by_id("test_3", "test_operation_by_id");
-
-		assert!(*VALIDATOR.lock().unwrap());
-	}
-
-	#[test]
-	fn test_system_execute_named_operation_on_all_profiles() {
-		static VALIDATOR_A:Mutex<bool> = Mutex::new(false);
-		static VALIDATOR_B:Mutex<bool> = Mutex::new(false);
-
-		let mut profile_a:WindowRelativeProfile = WindowRelativeProfile::new("test_4", "", "");
-		let mut profile_b:WindowRelativeProfile = WindowRelativeProfile::new("test_5", "", "");
-		profile_a.add_named_operation("test_operation_all_profiles", |_profile| { *VALIDATOR_A.lock().unwrap() = true; Ok(()) });
-		profile_b.add_named_operation("test_operation_all_profiles", |_profile| { *VALIDATOR_B.lock().unwrap() = true; Ok(()) });
-		WindowRelativeSystem::add_profile(profile_a);
-		WindowRelativeSystem::add_profile(profile_b);
-
-		WindowRelativeSystem::execute_named_operation_on_all_profiles("test_operation_all_profiles");
 
 		assert!(*VALIDATOR_A.lock().unwrap());
 		assert!(*VALIDATOR_B.lock().unwrap());

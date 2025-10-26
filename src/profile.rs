@@ -6,15 +6,13 @@ use std::error::Error;
 type EventHandlerResponse = Result<(), Box<dyn Error>>;
 type EventHandler = dyn Fn(&mut WindowRelativeProfileProperties, &TaskScheduler) -> EventHandlerResponse + Send + Sync;
 type EventHandlerList = Vec<Box<EventHandler>>;
-type NamedOperationReturnType = Result<(), Box<dyn Error>>;
 
 
 
 pub struct WindowRelativeProfile {
 	properties: WindowRelativeProfileProperties,
 	event_handlers:WindowRelativeProfileEventHandlers,
-	pub(crate) task_system:TaskSystem,
-	pub(crate) named_operations:Vec<(String, Box<dyn Fn(&WindowRelativeProfileProperties) -> NamedOperationReturnType + Send + Sync>)>
+	pub(crate) task_system:TaskSystem
 }
 impl WindowRelativeProfile {
 
@@ -41,8 +39,7 @@ impl WindowRelativeProfile {
 				on_deactivate: Vec::new(),
 				on_close: Vec::new()
 			},
-			task_system,
-			named_operations: Vec::new()
+			task_system
 		}
 	}
 
@@ -88,12 +85,6 @@ impl WindowRelativeProfile {
 		self
 	}
 
-	/// Return self with an additional named operation.
-	pub fn with_named_operation<T>(mut self, name:&str, operation:T) -> Self where T:Fn(&WindowRelativeProfileProperties) -> NamedOperationReturnType + Send + Sync + 'static {
-		self.add_named_operation(name, operation);
-		self
-	}
-
 
 
 	/* PROPERTY GETTER METHODS */
@@ -132,14 +123,9 @@ impl WindowRelativeProfile {
 		self.task_system.add_task(task);
 	}
 
-	/// Add a named operation.
-	pub fn add_named_operation<T>(&mut self, name:&str, operation:T) where T:Fn(&WindowRelativeProfileProperties) -> NamedOperationReturnType + Send + Sync + 'static {
-		self.named_operations.push((name.to_string(), Box::new(operation)));
-	}
-
-	/// Execute an operation by its name.
-	pub fn execute_named_operation(&mut self, name:&str) -> Option<NamedOperationReturnType> {
-		self.named_operations.iter().find(|(operation_name, _)| name == operation_name).map(|(_, operation)| operation(&self.properties))
+	/// Trigger an event in the task-system.
+	pub fn trigger_event(&mut self, event_name:&str) {
+		self.task_system.trigger_event(event_name);
 	}
 
 
