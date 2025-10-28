@@ -18,8 +18,8 @@ mod tests {
 		assert_eq!(profile.title(), "test_title");
 		assert_eq!(profile.process_name(), "test_process_name.exe");
 		assert_eq!(profile.is_default_profile(), false);
-		assert_eq!(profile.is_active("active_process_name", "active_process_title"), false);
-		assert_eq!(profile.is_active("test_process_name.exe", "active_process_title"), true);
+		assert_eq!(profile.is_active(&fake_window, "active_process_name", "active_process_title"), false);
+		assert_eq!(profile.is_active(&fake_window, "test_process_name.exe", "active_process_title"), true);
 		profile.trigger_activate_event(&fake_window).unwrap();
 		assert!(HISTORY.lock().unwrap().is_empty());
 		profile.trigger_deactivate_event(&fake_window).unwrap();
@@ -30,7 +30,7 @@ mod tests {
 		// Create a new profile as the previous profile has already triggered the 'open' event on the first 'activation' event.
 		let mut profile:WindowRelativeProfile = WindowRelativeProfile::new("test_id", "test_title", "test_process_name.exe")
 								.with_is_default_profile()
-								.with_active_checker(|_, active_process_name, _| active_process_name == "second_test_process_name.exe")
+								.with_active_checker(|_, _, active_process_name, _| active_process_name == "second_test_process_name.exe")
 								.with_open_handler(|_, _, _| { HISTORY.lock().unwrap().push("open".to_string()); Ok(()) })
 								.with_activate_handler(|_, _, _| { HISTORY.lock().unwrap().push("activate".to_string()); Ok(()) })
 								.with_deactivate_handler(|_, _, _| { HISTORY.lock().unwrap().push("deactivate".to_string()); Ok(()) })
@@ -40,9 +40,9 @@ mod tests {
 		assert_eq!(profile.title(), "test_title");
 		assert_eq!(profile.process_name(), "test_process_name.exe");
 		assert_eq!(profile.is_default_profile(), true);
-		assert_eq!(profile.is_active("active_process_name", "active_process_title"), false);
-		assert_eq!(profile.is_active("test_process_name.exe", "active_process_title"), false);
-		assert_eq!(profile.is_active("second_test_process_name.exe", "active_process_title"), true);
+		assert_eq!(profile.is_active(&fake_window, "active_process_name", "active_process_title"), false);
+		assert_eq!(profile.is_active(&fake_window, "test_process_name.exe", "active_process_title"), false);
+		assert_eq!(profile.is_active(&fake_window, "second_test_process_name.exe", "active_process_title"), true);
 		profile.trigger_activate_event(&fake_window).unwrap();
 		assert_eq!(HISTORY.lock().unwrap().remove(0), "open");
 		assert_eq!(HISTORY.lock().unwrap().remove(0), "activate");

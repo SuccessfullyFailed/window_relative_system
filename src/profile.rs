@@ -30,7 +30,7 @@ impl WindowRelativeProfile {
 				process_name: process_name.to_string(),
 				is_default_profile: false,
 
-				active_checker: Box::new(|_self, active_process_name, _active_process_title| active_process_name == _self.process_name),
+				active_checker: Box::new(|_self, _window, active_process_name, _active_process_title| active_process_name == _self.process_name),
 				is_opened: false,
 				is_active: false
 			},
@@ -51,7 +51,7 @@ impl WindowRelativeProfile {
 	}
 
 	/// Replace the active checker and return self.
-	pub fn with_active_checker<T>(mut self, active_checker:T) -> Self where T:Fn(&WindowRelativeProfileProperties, &str, &str) -> bool + Send + Sync + 'static {
+	pub fn with_active_checker<T>(mut self, active_checker:T) -> Self where T:Fn(&WindowRelativeProfileProperties, &WindowController, &str, &str) -> bool + Send + Sync + 'static {
 		self.properties.active_checker = Box::new(active_checker);
 		self
 	}
@@ -115,8 +115,8 @@ impl WindowRelativeProfile {
 	/* USAGE METHODS */
 
 	/// Check if this is the active profile.
-	pub fn is_active(&self, active_process_name:&str, active_process_title:&str) -> bool {
-		(self.properties.active_checker)(&self.properties, active_process_name, active_process_title)
+	pub fn is_active(&self, window:&WindowController, active_process_name:&str, active_process_title:&str) -> bool {
+		(self.properties.active_checker)(&self.properties, &window, active_process_name, active_process_title)
 	}
 
 	/// Add a task to the task-system.
@@ -188,7 +188,7 @@ pub struct WindowRelativeProfileProperties {
 	process_name:String,
 	is_default_profile:bool,
 	
-	active_checker:Box<dyn Fn(&WindowRelativeProfileProperties, &str, &str) -> bool + Send + Sync>,
+	active_checker:Box<dyn Fn(&WindowRelativeProfileProperties, &WindowController, &str, &str) -> bool + Send + Sync>,
 	is_opened:bool,
 	is_active:bool
 }

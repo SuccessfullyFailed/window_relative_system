@@ -85,7 +85,7 @@ impl WindowRelativeSystem {
 			// Find active profile.
 			let active_process_name:String = current_window.process_name().unwrap_or_default();
 			let active_process_title:String = current_window.title();
-			let active_profile_index:usize = system.profiles.iter().position(|profile| profile.is_active(&active_process_name, &active_process_title)).unwrap_or(0);
+			let active_profile_index:usize = system.profiles.iter().position(|profile| profile.is_active(&current_window, &active_process_name, &active_process_title)).unwrap_or(0);
 
 			// Profile change.
 			if active_profile_index != system.active_profile_index {
@@ -156,7 +156,7 @@ impl Default for WindowRelativeSystem {
 	fn default() -> Self {
 		WindowRelativeSystem {
 			profiles: vec![
-				WindowRelativeProfile::new("DEFAULT_PROFILE_ID", "DEFAULT_PROFILE_TITLE", "DEFAULT_PROFILE_PROCESS_NAME").with_active_checker(|_, _, _| false).with_is_default_profile()
+				WindowRelativeProfile::new("DEFAULT_PROFILE_ID", "DEFAULT_PROFILE_TITLE", "DEFAULT_PROFILE_PROCESS_NAME").with_active_checker(|_, _, _, _| false).with_is_default_profile()
 			],
 			active_profile_index: 0,
 			error_handler: Box::new(|profile, event_name, error| DEFAULT_ERROR_HANDLER(profile, event_name, error)),
