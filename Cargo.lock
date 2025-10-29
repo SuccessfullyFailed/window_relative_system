@@ -76,15 +76,15 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
 name = "window_controller"
-version = "0.1.0"
-source = "git+https://github.com/SuccessfullyFailed/window_controller#7ea79b2dc530f2b5bdb99c353374f60b90a60bbd"
+version = "0.1.1"
+source = "git+https://github.com/SuccessfullyFailed/window_controller#f512e10bdf521f6d015745007dd04878006b0c96"
 dependencies = [
  "winapi",
 ]
 
 [[package]]
 name = "window_relative_system"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "ctor",
  "task_syncer",

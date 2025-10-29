@@ -52,9 +52,23 @@ pub fn install(create_thread:bool) {
 /// Handle a windows hook event to process changes in active window.
 #[allow(static_mut_refs)]
 unsafe extern "system" fn win_event_proc(_event_hook:HWINEVENTHOOK, event:DWORD, hwnd:HWND, _id_object:LONG, _id_child:LONG, _dw_event_thread:DWORD, _dwms_event_time:DWORD) {
+	const ALTTAB_PROCESS_NAME:&str = "explorer.exe";
+	const ALTTAB_CLASS_NAMES:&[&str] = &["ForegroundStaging", "XamlExplorerHostIslandWindow"];
+
 	unsafe {
 		if event == EVENT_SYSTEM_FOREGROUND {
+
+			// Ignore event if the user is alt-tabbing.
 			let window_controller:WindowController = WindowController::from_hwnd(hwnd);
+			let process_name:String = window_controller.process_name().unwrap_or_default();
+			if process_name == ALTTAB_PROCESS_NAME {
+				let class:String = window_controller.class();
+				if ALTTAB_CLASS_NAMES.contains(&class.as_str()) {
+					return;
+				}
+			}
+
+			// Update profile in window-relative system.
 			let previous_window:WindowController = PREVIOUS_WINDOW.as_ref().unwrap().clone();
 			WindowRelativeSystem::update_profile(previous_window, window_controller.clone());
 			PREVIOUS_WINDOW = Some(window_controller);
