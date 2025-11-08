@@ -84,7 +84,7 @@ dependencies = [
 
 [[package]]
 name = "window_relative_system"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "ctor",
  "task_syncer",

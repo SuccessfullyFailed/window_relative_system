@@ -1,6 +1,7 @@
 use task_syncer::{ TaskLike, TaskScheduler, TaskSystem };
 use window_controller::WindowController;
 use std::{ error::Error, time::Instant };
+use crate::WindowRelativeProfileService;
 
 
 
@@ -86,6 +87,46 @@ impl WindowRelativeProfile {
 		self
 	}
 
+	/// Return self with an applied service.
+	pub fn with_service<T:WindowRelativeProfileService + Send + Sync + 'static>(mut self, service:T) -> Self {
+		service.apply_to_profile_ref(&mut self);
+		self
+	}
+
+
+	
+	/* REFERENCE VERSION OF BUILDER METHODS */
+
+	/// Return self with an additional profile open event handler.
+	pub fn add_open_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
+		self.event_handlers.on_open.push(Box::new(handler));
+	}
+
+	/// Return self with an additional profile activate event handler.
+	pub fn add_activate_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
+		self.event_handlers.on_activate.push(Box::new(handler));
+	}
+
+	/// Return self with an additional profile deactivate event handler.
+	pub fn add_deactivate_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
+		self.event_handlers.on_deactivate.push(Box::new(handler));
+	}
+
+	/// Return self with an additional profile close event handler.
+	pub fn add_close_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
+		self.event_handlers.on_close.push(Box::new(handler));
+	}
+
+	/// Add a task to the task-system.
+	pub fn add_task<T:TaskLike + Send + Sync + 'static>(&mut self, task:T) {
+		self.task_system.add_task(task);
+	}
+
+	/// Apply a service to the profile.
+	pub fn add_service<T:WindowRelativeProfileService + Send + Sync + 'static>(&mut self, service:T) {
+		service.apply_to_profile_ref(self);
+	}
+
 
 
 	/* PROPERTY GETTER METHODS */
@@ -117,11 +158,6 @@ impl WindowRelativeProfile {
 	/// Check if this is the active profile.
 	pub fn is_active(&self, window:&WindowController, active_process_name:&str, active_process_title:&str) -> bool {
 		(self.properties.active_checker)(&self.properties, &window, active_process_name, active_process_title)
-	}
-
-	/// Add a task to the task-system.
-	pub fn add_task<T:TaskLike + Send + Sync + 'static>(&mut self, task:T) {
-		self.task_system.add_task(task);
 	}
 
 	/// Trigger an event in the task-system.
