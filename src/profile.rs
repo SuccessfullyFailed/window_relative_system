@@ -52,6 +52,15 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 	fn task_system_mut(&mut self) -> &mut TaskSystem {
 		self.core_mut().task_system_mut()
 	}
+
+
+
+	/* USAGE METHODS */
+
+	/// Trigger an event in the task-system.
+	fn trigger_event(&mut self, event_name:&str) {
+		self.task_system_mut().trigger_event(event_name);
+	}
 }
 
 
