@@ -4,7 +4,7 @@ use task_syncer::TaskScheduler;
 
 
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub struct WindowRelativeServiceTrigger(u8);
 impl WindowRelativeServiceTrigger {
 	pub const OPEN:WindowRelativeServiceTrigger = WindowRelativeServiceTrigger(1);
@@ -39,5 +39,5 @@ pub trait WindowRelativeProfileService:Send + Sync {
 	fn when_to_trigger(&self) -> WindowRelativeServiceTrigger;
 
 	/// Run the service.
-	fn run(&mut self, properties:&WindowRelativeProfileProperties, task_scheduler:&TaskScheduler);
+	fn run(&mut self, properties:&WindowRelativeProfileProperties, task_scheduler:&TaskScheduler, trigger:WindowRelativeServiceTrigger);
 }

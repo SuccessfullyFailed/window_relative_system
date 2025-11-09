@@ -285,7 +285,7 @@ impl WindowRelativeProfileCore {
 	fn run_services_by_trigger(&mut self, trigger:WindowRelativeServiceTrigger) {
 		for service in &mut self.services {
 			if service.when_to_trigger() & trigger == trigger {
-				service.run(&self.properties, self.task_system.task_scheduler());
+				service.run(&self.properties, self.task_system.task_scheduler(), trigger);
 			}
 		}
 	}
