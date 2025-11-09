@@ -128,17 +128,17 @@ impl WindowRelativeSystem {
 	}
 
 	/// Execute an action on the current profile.
-	pub fn execute_on_current_profile<T, U>(action:T) -> Option<U> where T:Fn(&mut dyn WindowRelativeProfile) -> U {
+	pub fn execute_on_current_profile<T, U>(action:T) -> Option<U> where T:Fn(&mut WindowRelativeProfileCore) -> U {
 		Self::execute_on_system(|system| {
-			action(&mut *system.profiles[system.active_profile_index])
+			action(system.profiles[system.active_profile_index].core_mut())
 		})
 	}
 
 	/// Execute an action on a profile by id. Uses system error handler if profile cannot be found.
-	pub fn execute_on_profile_by_id<T, U>(profile_id:&str, action:T) -> Option<U> where T:Fn(&mut dyn WindowRelativeProfile) -> U {
+	pub fn execute_on_profile_by_id<T, U>(profile_id:&str, action:T) -> Option<U> where T:Fn(&mut WindowRelativeProfileCore) -> U {
 		Self::execute_on_system(|system| {
 			match system.profiles.iter_mut().find(|profile| profile.id() == profile_id) {
-				Some(profile) => Some(action(&mut **profile)),
+				Some(profile) => Some(action(profile.core_mut())),
 				None => {
 					(system.error_handler)(system.profiles[system.active_profile_index].core(), "action on profile by id", &format!("Could not find profile by id '{profile_id}'."));
 					None
@@ -148,16 +148,16 @@ impl WindowRelativeSystem {
 	}
 
 	/// Execute an action on all profiles. Excludes the DefaultProfile.
-	pub fn execute_on_all_profiles<T, U>(action:T) -> Vec<U> where T:Fn(&mut dyn WindowRelativeProfile) -> U {
+	pub fn execute_on_all_profiles<T, U>(action:T) -> Vec<U> where T:Fn(&mut WindowRelativeProfileCore) -> U {
 		Self::execute_on_system(|system| {
-			(1..system.profiles.len()).map(|profile_index| action(&mut *system.profiles[profile_index])).collect()
+			(1..system.profiles.len()).map(|profile_index| action(&mut *system.profiles[profile_index].core_mut())).collect()
 		}).unwrap_or_default()
 	}
 
 	/// Execute an action on all profiles. Includes the DefaultProfile.
-	pub fn execute_on_all_profiles_and_default<T, U>(action:T) -> Vec<U> where T:Fn(&mut dyn WindowRelativeProfile) -> U {
+	pub fn execute_on_all_profiles_and_default<T, U>(action:T) -> Vec<U> where T:Fn(&mut WindowRelativeProfileCore) -> U {
 		Self::execute_on_system(|system| {
-			(0..system.profiles.len()).map(|profile_index| action(&mut *system.profiles[profile_index])).collect()
+			(0..system.profiles.len()).map(|profile_index| action(system.profiles[profile_index].core_mut())).collect()
 		}).unwrap_or_default()
 	}
 }
