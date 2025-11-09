@@ -13,4 +13,4 @@ pub use profile::*;
 pub use profile_service::*;
 
 pub use window_controller::WindowController;
-pub use task_syncer::{ Task, EventSubscription, TaskScheduler };
+pub use task_syncer::*;
