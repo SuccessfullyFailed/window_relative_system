@@ -237,7 +237,7 @@ impl WindowRelativeProfileCore {
 		for handler in &self.event_handlers.on_open {
 			handler(&mut self.properties, self.task_system.task_scheduler(), new_window)?;
 		}
-		self.run_services_by_trigger(WindowRelativeServiceTrigger::OPEN)?;
+		self.run_services_by_trigger(new_window, WindowRelativeServiceTrigger::OPEN)?;
 		Ok(())
 	}
 
@@ -251,7 +251,7 @@ impl WindowRelativeProfileCore {
 		for handler in &self.event_handlers.on_activate {
 			handler(&mut self.properties, self.task_system.task_scheduler(), new_window)?;
 		}
-		self.run_services_by_trigger(WindowRelativeServiceTrigger::ACTIVATE)?;
+		self.run_services_by_trigger(new_window, WindowRelativeServiceTrigger::ACTIVATE)?;
 		self.task_system.run_once(&Instant::now());
 		Ok(())
 	}
@@ -262,7 +262,7 @@ impl WindowRelativeProfileCore {
 		for handler in &self.event_handlers.on_deactivate {
 			handler(&mut self.properties, self.task_system.task_scheduler(), deactivated_window)?;
 		}
-		self.run_services_by_trigger(WindowRelativeServiceTrigger::DEACTIVATE)?;
+		self.run_services_by_trigger(deactivated_window, WindowRelativeServiceTrigger::DEACTIVATE)?;
 		if !deactivated_window.is_visible() {
 			self.trigger_close_event(deactivated_window)?;
 		}
@@ -277,15 +277,15 @@ impl WindowRelativeProfileCore {
 		for handler in &self.event_handlers.on_close {
 			handler(&mut self.properties, self.task_system.task_scheduler(), deactivated_window)?;
 		}
-		self.run_services_by_trigger(WindowRelativeServiceTrigger::CLOSE)?;
+		self.run_services_by_trigger(deactivated_window, WindowRelativeServiceTrigger::CLOSE)?;
 		Ok(())
 	}
 
 	/// Run all services that have a specific trigger.
-	fn run_services_by_trigger(&mut self, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
+	fn run_services_by_trigger(&mut self, window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 		for service in &mut self.services {
 			if service.when_to_trigger() & trigger == trigger {
-				service.run(&self.properties, self.task_system.task_scheduler(), trigger)?;
+				service.run(&self.properties, self.task_system.task_scheduler(), window, trigger)?;
 			}
 		}
 		Ok(())

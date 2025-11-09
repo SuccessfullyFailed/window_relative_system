@@ -1,6 +1,7 @@
 use std::{ error::Error, ops::{ BitAnd, BitOr } };
 use crate::WindowRelativeProfileProperties;
 use task_syncer::TaskScheduler;
+use window_controller::WindowController;
 
 
 
@@ -39,5 +40,5 @@ pub trait WindowRelativeProfileService:Send + Sync {
 	fn when_to_trigger(&self) -> WindowRelativeServiceTrigger;
 
 	/// Run the service.
-	fn run(&mut self, properties:&WindowRelativeProfileProperties, task_scheduler:&TaskScheduler, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>>;
+	fn run(&mut self, properties:&WindowRelativeProfileProperties, task_scheduler:&TaskScheduler, window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>>;
 }
