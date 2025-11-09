@@ -2,7 +2,8 @@
 mod tests {
 	use crate::{ WindowRelativeProfileCore, WindowRelativeProfileService, WindowRelativeServiceTrigger };
 	use window_controller::WindowController;
-	
+	use std::error::Error;
+
 
 
 	#[test]
@@ -13,9 +14,10 @@ mod tests {
 		impl WindowRelativeProfileService for TestService {
 			fn name(&self) -> &str { "TestService" }
 			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger { WindowRelativeServiceTrigger::OPEN }
-			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&task_syncer::TaskScheduler, trigger:WindowRelativeServiceTrigger) {
+			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&task_syncer::TaskScheduler, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				assert_eq!(trigger, WindowRelativeServiceTrigger::OPEN);
 				unsafe { VALIDATION_VARIABLE += 1; }
+				Ok(())
 			}
 		}
 
@@ -42,9 +44,10 @@ mod tests {
 		impl WindowRelativeProfileService for TestService {
 			fn name(&self) -> &str { "TestService" }
 			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger { WindowRelativeServiceTrigger::ACTIVATE }
-			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&task_syncer::TaskScheduler, trigger:WindowRelativeServiceTrigger) {
+			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&task_syncer::TaskScheduler, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				assert_eq!(trigger, WindowRelativeServiceTrigger::ACTIVATE);
 				unsafe { VALIDATION_VARIABLE += 1; }
+				Ok(())
 			}
 		}
 
@@ -71,9 +74,10 @@ mod tests {
 		impl WindowRelativeProfileService for TestService {
 			fn name(&self) -> &str { "TestService" }
 			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger { WindowRelativeServiceTrigger::DEACTIVATE }
-			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&task_syncer::TaskScheduler, trigger:WindowRelativeServiceTrigger) {
+			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&task_syncer::TaskScheduler, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				assert_eq!(trigger, WindowRelativeServiceTrigger::DEACTIVATE);
 				unsafe { VALIDATION_VARIABLE += 1; }
+				Ok(())
 			}
 		}
 
@@ -100,8 +104,9 @@ mod tests {
 		impl WindowRelativeProfileService for TestService {
 			fn name(&self) -> &str { "TestService" }
 			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger { WindowRelativeServiceTrigger::ALL }
-			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&task_syncer::TaskScheduler, _trigger:WindowRelativeServiceTrigger) {
+			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&task_syncer::TaskScheduler, _trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				unsafe { VALIDATION_VARIABLE += 1; }
+				Ok(())
 			}
 		}
 
