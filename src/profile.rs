@@ -1,7 +1,7 @@
 use task_syncer::{ TaskLike, TaskScheduler, TaskSystem };
 use window_controller::WindowController;
 use std::{ error::Error, time::Instant };
-use crate::WindowRelativeProfileService;
+use crate::{WindowRelativeProfileService, WindowRelativeServiceTrigger};
 
 
 
@@ -57,8 +57,9 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 
 
 pub struct WindowRelativeProfileCore {
-	properties: WindowRelativeProfileProperties,
+	properties:WindowRelativeProfileProperties,
 	event_handlers:WindowRelativeProfileEventHandlers,
+	services:Vec<Box<dyn WindowRelativeProfileService>>,
 	task_system:TaskSystem
 }
 impl WindowRelativeProfileCore {
@@ -86,6 +87,7 @@ impl WindowRelativeProfileCore {
 				on_deactivate: Vec::new(),
 				on_close: Vec::new()
 			},
+			services: Vec::new(),
 			task_system
 		}
 	}
@@ -98,43 +100,43 @@ impl WindowRelativeProfileCore {
 
 	/// Replace the active checker and return self.
 	pub fn with_active_checker<T>(mut self, active_checker:T) -> Self where T:Fn(&WindowRelativeProfileProperties, &WindowController, &str, &str) -> bool + Send + Sync + 'static {
-		self.properties.active_checker = Box::new(active_checker);
+		self.set_active_checker(active_checker);
 		self
 	}
 
 	/// Return self with an additional profile open event handler.
 	pub fn with_open_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
-		self.event_handlers.on_open.push(Box::new(handler));
+		self.add_open_handler(handler);
 		self
 	}
 
 	/// Return self with an additional profile activate event handler.
 	pub fn with_activate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
-		self.event_handlers.on_activate.push(Box::new(handler));
+		self.add_activate_handler(handler);
 		self
 	}
 
 	/// Return self with an additional profile deactivate event handler.
 	pub fn with_deactivate_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
-		self.event_handlers.on_deactivate.push(Box::new(handler));
+		self.add_deactivate_handler(handler);
 		self
 	}
 
 	/// Return self with an additional profile close event handler.
 	pub fn with_close_handler<T>(mut self, handler:T) -> Self where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
-		self.event_handlers.on_close.push(Box::new(handler));
+		self.add_close_handler(handler);
 		self
 	}
 
 	/// Return self with an additional task-syncer task.
 	pub fn with_task<T:TaskLike + Send + Sync + 'static>(mut self, task:T) -> Self {
-		self.task_system.add_task(task);
+		self.add_task(task);
 		self
 	}
 
 	/// Return self with an applied service.
-	pub fn with_service<T:WindowRelativeProfileService + Send + Sync + 'static>(mut self, service:T) -> Self {
-		service.apply_to_profile_ref(&mut self);
+	pub fn with_service<T:WindowRelativeProfileService + 'static>(mut self, service:T) -> Self {
+		self.add_service(service);
 		self
 	}
 
@@ -174,7 +176,7 @@ impl WindowRelativeProfileCore {
 
 	/// Apply a service to the profile.
 	pub fn add_service<T:WindowRelativeProfileService + Send + Sync + 'static>(&mut self, service:T) {
-		service.apply_to_profile_ref(self);
+		self.services.push(Box::new(service));
 	}
 
 
@@ -235,6 +237,7 @@ impl WindowRelativeProfileCore {
 		for handler in &self.event_handlers.on_open {
 			handler(&mut self.properties, self.task_system.task_scheduler(), new_window)?;
 		}
+		self.run_services_by_trigger(WindowRelativeServiceTrigger::OPEN);
 		Ok(())
 	}
 
@@ -248,6 +251,7 @@ impl WindowRelativeProfileCore {
 		for handler in &self.event_handlers.on_activate {
 			handler(&mut self.properties, self.task_system.task_scheduler(), new_window)?;
 		}
+		self.run_services_by_trigger(WindowRelativeServiceTrigger::ACTIVATE);
 		self.task_system.run_once(&Instant::now());
 		Ok(())
 	}
@@ -258,6 +262,7 @@ impl WindowRelativeProfileCore {
 		for handler in &self.event_handlers.on_deactivate {
 			handler(&mut self.properties, self.task_system.task_scheduler(), deactivated_window)?;
 		}
+		self.run_services_by_trigger(WindowRelativeServiceTrigger::DEACTIVATE);
 		if !deactivated_window.is_visible() {
 			self.trigger_close_event(deactivated_window)?;
 		}
@@ -272,7 +277,17 @@ impl WindowRelativeProfileCore {
 		for handler in &self.event_handlers.on_close {
 			handler(&mut self.properties, self.task_system.task_scheduler(), deactivated_window)?;
 		}
+		self.run_services_by_trigger(WindowRelativeServiceTrigger::CLOSE);
 		Ok(())
+	}
+
+	/// Run all services that have a specific trigger.
+	fn run_services_by_trigger(&mut self, trigger:WindowRelativeServiceTrigger) {
+		for service in &mut self.services {
+			if service.when_to_trigger() & trigger == trigger {
+				service.run(&self.properties, self.task_system.task_scheduler());
+			}
+		}
 	}
 }
 impl WindowRelativeProfile for WindowRelativeProfileCore {

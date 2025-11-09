@@ -1,15 +1,43 @@
-use crate::WindowRelativeProfile;
+use crate::WindowRelativeProfileProperties;
+use std::ops::{ BitAnd, BitOr };
+use task_syncer::TaskScheduler;
 
 
 
-pub trait WindowRelativeProfileService:Sized {
+#[derive(Clone, Copy, PartialEq)]
+pub struct WindowRelativeServiceTrigger(u8);
+impl WindowRelativeServiceTrigger {
+	pub const OPEN:WindowRelativeServiceTrigger = WindowRelativeServiceTrigger(1);
+	pub const ACTIVATE:WindowRelativeServiceTrigger = WindowRelativeServiceTrigger(2);
+	pub const DEACTIVATE:WindowRelativeServiceTrigger = WindowRelativeServiceTrigger(4);
+	pub const CLOSE:WindowRelativeServiceTrigger = WindowRelativeServiceTrigger(8);
+	pub const ALL:WindowRelativeServiceTrigger = WindowRelativeServiceTrigger(0xFF);
+}
+impl BitAnd for WindowRelativeServiceTrigger {
+	type Output = WindowRelativeServiceTrigger;
 
-	/// Return the given profile with the service applied to it.
-	fn apply_to_profile<T:WindowRelativeProfile + 'static>(self, mut profile:T) -> T {
-		self.apply_to_profile_ref(&mut profile);
-		profile
+	fn bitand(self, rhs:Self) -> Self::Output {
+		WindowRelativeServiceTrigger(self.0 & rhs.0)
 	}
+}
+impl BitOr for WindowRelativeServiceTrigger {
+	type Output = WindowRelativeServiceTrigger;
 
-	/// Apply the service to the given profile using a mutable reference.
-	fn apply_to_profile_ref(self, profile:&mut dyn WindowRelativeProfile);
+	fn bitor(self, rhs:Self) -> Self::Output {
+		WindowRelativeServiceTrigger(self.0 | rhs.0)
+	}
+}
+
+
+
+pub trait WindowRelativeProfileService:Send + Sync {
+
+	/// The name of the service.
+	fn name(&self) -> &str;
+
+	/// When the service should trigger.
+	fn when_to_trigger(&self) -> WindowRelativeServiceTrigger;
+
+	/// Run the service.
+	fn run(&mut self, properties:&WindowRelativeProfileProperties, task_scheduler:&TaskScheduler);
 }
