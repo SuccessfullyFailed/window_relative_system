@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
 	use window_controller::WindowController;
-	use crate::WindowRelativeProfile;
+	use crate::WindowRelativeProfileCore;
 	use task_syncer::Task;
 	use std::sync::Mutex;
 	
@@ -13,7 +13,7 @@ mod tests {
 
 		let fake_window:WindowController = WindowController::from_hwnd(std::ptr::null_mut());
 
-		let mut profile:WindowRelativeProfile = WindowRelativeProfile::new("test_id", "test_title", "test_process_name.exe");
+		let mut profile:WindowRelativeProfileCore = WindowRelativeProfileCore::new("test_id", "test_title", "test_process_name.exe");
 		assert_eq!(profile.id(), "test_id");
 		assert_eq!(profile.title(), "test_title");
 		assert_eq!(profile.process_name(), "test_process_name.exe");
@@ -28,7 +28,7 @@ mod tests {
 		assert!(HISTORY.lock().unwrap().is_empty());
 
 		// Create a new profile as the previous profile has already triggered the 'open' event on the first 'activation' event.
-		let mut profile:WindowRelativeProfile = WindowRelativeProfile::new("test_id", "test_title", "test_process_name.exe")
+		let mut profile:WindowRelativeProfileCore = WindowRelativeProfileCore::new("test_id", "test_title", "test_process_name.exe")
 								.with_is_default_profile()
 								.with_active_checker(|_, _, active_process_name, _| active_process_name == "second_test_process_name.exe")
 								.with_open_handler(|_, _, _| { HISTORY.lock().unwrap().push("open".to_string()); Ok(()) })

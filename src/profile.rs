@@ -11,20 +11,65 @@ type EventHandlerList = Vec<Box<EventHandler>>;
 
 
 
-pub struct WindowRelativeProfile {
+pub trait WindowRelativeProfile:Send + Sync + 'static {
+
+	/// Get the core of the profile.
+	fn core(&self) -> &WindowRelativeProfileCore;
+
+	/// Get the core of the profile mutable.
+	fn core_mut(&mut self) -> &mut WindowRelativeProfileCore;
+
+
+
+	/* PROPERTY GETTER METHODS */
+
+	/// Get the ID of the profile.
+	fn id(&self) -> &str {
+		self.core().id()
+	}
+
+	/// Get the title of the profile.
+	fn title(&self) -> &str {
+		self.core().title()
+	}
+
+	/// Get the process-name of the profile.
+	fn process_name(&self) -> &str {
+		self.core().process_name()
+	}
+
+	/// Whether or not this is the default profile.
+	fn is_default_profile(&self) -> bool {
+		self.core().is_default_profile()
+	}
+
+	/// Get the task system.
+	fn task_system(&self) -> &TaskSystem {
+		self.core().task_system()
+	}
+
+	/// Get the task system mutable.
+	fn task_system_mut(&mut self) -> &mut TaskSystem {
+		self.core_mut().task_system_mut()
+	}
+}
+
+
+
+pub struct WindowRelativeProfileCore {
 	properties: WindowRelativeProfileProperties,
 	event_handlers:WindowRelativeProfileEventHandlers,
-	pub(crate) task_system:TaskSystem
+	task_system:TaskSystem
 }
-impl WindowRelativeProfile {
+impl WindowRelativeProfileCore {
 
 	/* CONSTRUCTOR METHODS */
 
 	/// Create a new profile.
-	pub fn new(id:&str, title:&str, process_name:&str) -> WindowRelativeProfile {
+	pub fn new(id:&str, title:&str, process_name:&str) -> WindowRelativeProfileCore {
 		let mut task_system:TaskSystem = TaskSystem::new();
 		task_system.pause();
-		WindowRelativeProfile {
+		WindowRelativeProfileCore {
 			properties: WindowRelativeProfileProperties {
 				id: id.to_string(),
 				title: title.to_string(),
@@ -97,22 +142,27 @@ impl WindowRelativeProfile {
 	
 	/* REFERENCE VERSION OF BUILDER METHODS */
 
-	/// Return self with an additional profile open event handler.
+	/// Set the active checker function.
+	pub fn set_active_checker<T>(&mut self, active_checker:T) where T:Fn(&WindowRelativeProfileProperties, &WindowController, &str, &str) -> bool + Send + Sync + 'static {
+		self.properties.active_checker = Box::new(active_checker);
+	}
+
+	/// Add an additional profile open event handler.
 	pub fn add_open_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
 		self.event_handlers.on_open.push(Box::new(handler));
 	}
 
-	/// Return self with an additional profile activate event handler.
+	/// Add an additional profile activate event handler.
 	pub fn add_activate_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
 		self.event_handlers.on_activate.push(Box::new(handler));
 	}
 
-	/// Return self with an additional profile deactivate event handler.
+	/// Add an additional profile deactivate event handler.
 	pub fn add_deactivate_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
 		self.event_handlers.on_deactivate.push(Box::new(handler));
 	}
 
-	/// Return self with an additional profile close event handler.
+	/// Add an additional profile close event handler.
 	pub fn add_close_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
 		self.event_handlers.on_close.push(Box::new(handler));
 	}
@@ -149,6 +199,16 @@ impl WindowRelativeProfile {
 	/// Whether or not this is the default profile.
 	pub fn is_default_profile(&self) -> bool {
 		self.properties.is_default_profile()
+	}
+
+	/// Get the task system.
+	pub fn task_system(&self) -> &TaskSystem {
+		&self.task_system
+	}
+
+	/// Get the task system mutable.
+	pub fn task_system_mut(&mut self) -> &mut TaskSystem {
+		&mut self.task_system
 	}
 
 
@@ -213,6 +273,14 @@ impl WindowRelativeProfile {
 			handler(&mut self.properties, self.task_system.task_scheduler(), deactivated_window)?;
 		}
 		Ok(())
+	}
+}
+impl WindowRelativeProfile for WindowRelativeProfileCore {
+	fn core(&self) -> &WindowRelativeProfileCore {
+		self
+	}
+	fn core_mut(&mut self) -> &mut WindowRelativeProfileCore {
+		self
 	}
 }
 

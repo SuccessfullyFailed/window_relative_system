@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ WindowRelativeProfile, WindowRelativeSystem };
+	use crate::{ WindowRelativeProfileCore, WindowRelativeSystem };
 	use std::{ sync::Mutex, thread::sleep, time::Duration };
 
 
@@ -12,7 +12,7 @@ mod tests {
 
 	#[test]
 	fn test_system_add_profile() {
-		WindowRelativeSystem::add_profile(WindowRelativeProfile::new(TEST_ID, "test_title", "test_process_name.exe"));
+		WindowRelativeSystem::add_profile(WindowRelativeProfileCore::new(TEST_ID, "test_title", "test_process_name.exe"));
 		WindowRelativeSystem::execute_on_all_profiles(|profile| {
 			if profile.id() == TEST_ID {
 				*TEST_PROFILE_ADDED.lock().unwrap() = true;
@@ -76,7 +76,7 @@ mod tests {
 		static VALIDATOR_A:Mutex<bool> = Mutex::new(false);
 		static VALIDATOR_B:Mutex<bool> = Mutex::new(false);
 		await_test_profile();
-		WindowRelativeSystem::add_profile(WindowRelativeProfile::new("test_2", "", ""));
+		WindowRelativeSystem::add_profile(WindowRelativeProfileCore::new("test_2", "", ""));
 
 		WindowRelativeSystem::execute_on_all_profiles(|profile| {
 			if profile.id() == TEST_ID {
