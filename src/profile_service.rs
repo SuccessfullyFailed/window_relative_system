@@ -40,8 +40,11 @@ pub trait WindowRelativeProfileService:Send + Sync {
 	fn when_to_trigger(&self) -> WindowRelativeServiceTrigger;
 
 	/// Install the service. This function is run when the service is applied to the profile.
-	fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {}
+	fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
+	}
 
 	/// Run the service.
-	fn run(&mut self, properties:&WindowRelativeProfileProperties, task_scheduler:&TaskScheduler, window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>>;
+	fn run(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, _trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
+		Ok(())
+	}
 }
