@@ -13,8 +13,15 @@ mod tests {
 
 		struct TestService {}
 		impl WindowRelativeProfileService for TestService {
-			fn name(&self) -> &str { "TestService" }
-			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger { WindowRelativeServiceTrigger::OPEN }
+			fn name(&self) -> &str {
+				"TestService"
+			}
+			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
+				WindowRelativeServiceTrigger::OPEN
+			}
+			fn install(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
+				unsafe { VALIDATION_VARIABLE = 10; }
+			}
 			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				assert_eq!(trigger, WindowRelativeServiceTrigger::OPEN);
 				unsafe { VALIDATION_VARIABLE += 1; }
@@ -26,15 +33,15 @@ mod tests {
 		profile.add_service(TestService {});
 		let window:WindowController = WindowController::active();
 
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 0);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 10);
 		profile.trigger_activate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 1);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 11);
 		profile.trigger_activate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 1);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 11);
 		profile.trigger_deactivate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 1);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 11);
 		profile.trigger_deactivate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 1);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 11);
 	}
 
 	#[test]
@@ -43,8 +50,15 @@ mod tests {
 
 		struct TestService {}
 		impl WindowRelativeProfileService for TestService {
-			fn name(&self) -> &str { "TestService" }
-			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger { WindowRelativeServiceTrigger::ACTIVATE }
+			fn name(&self) -> &str {
+				"TestService"
+			}
+			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
+				WindowRelativeServiceTrigger::ACTIVATE
+			}
+			fn install(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
+				unsafe { VALIDATION_VARIABLE = 10; }
+			}
 			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				assert_eq!(trigger, WindowRelativeServiceTrigger::ACTIVATE);
 				unsafe { VALIDATION_VARIABLE += 1; }
@@ -56,15 +70,15 @@ mod tests {
 		profile.add_service(TestService {});
 		let window:WindowController = WindowController::active();
 
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 0);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 10);
 		profile.trigger_activate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 1);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 11);
 		profile.trigger_activate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 2);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 12);
 		profile.trigger_deactivate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 2);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 12);
 		profile.trigger_deactivate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 2);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 12);
 	}
 
 	#[test]
@@ -73,8 +87,15 @@ mod tests {
 
 		struct TestService {}
 		impl WindowRelativeProfileService for TestService {
-			fn name(&self) -> &str { "TestService" }
-			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger { WindowRelativeServiceTrigger::DEACTIVATE }
+			fn name(&self) -> &str {
+				"TestService"
+			}
+			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
+				WindowRelativeServiceTrigger::DEACTIVATE
+			}
+			fn install(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
+				unsafe { VALIDATION_VARIABLE = 10; }
+			}
 			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				assert_eq!(trigger, WindowRelativeServiceTrigger::DEACTIVATE);
 				unsafe { VALIDATION_VARIABLE += 1; }
@@ -86,15 +107,15 @@ mod tests {
 		profile.add_service(TestService {});
 		let window:WindowController = WindowController::active();
 
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 0);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 10);
 		profile.trigger_activate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 0);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 10);
 		profile.trigger_activate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 0);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 10);
 		profile.trigger_deactivate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 1);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 11);
 		profile.trigger_deactivate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 2);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 12);
 	}
 
 	#[test]
@@ -103,8 +124,15 @@ mod tests {
 
 		struct TestService {}
 		impl WindowRelativeProfileService for TestService {
-			fn name(&self) -> &str { "TestService" }
-			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger { WindowRelativeServiceTrigger::ALL }
+			fn name(&self) -> &str {
+				"TestService"
+			}
+			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
+				WindowRelativeServiceTrigger::ALL
+			}
+			fn install(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
+				unsafe { VALIDATION_VARIABLE = 10; }
+			}
 			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, _trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				unsafe { VALIDATION_VARIABLE += 1; }
 				Ok(())
@@ -115,14 +143,14 @@ mod tests {
 		profile.add_service(TestService {});
 		let window:WindowController = WindowController::active();
 
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 0);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 10);
 		profile.trigger_activate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 2);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 12);
 		profile.trigger_activate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 3);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 13);
 		profile.trigger_deactivate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 4);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 14);
 		profile.trigger_deactivate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 5);
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 15);
 	}
 }

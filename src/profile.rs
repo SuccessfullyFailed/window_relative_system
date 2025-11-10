@@ -184,8 +184,16 @@ impl WindowRelativeProfileCore {
 	}
 
 	/// Apply a service to the profile.
-	pub fn add_service<T:WindowRelativeProfileService + Send + Sync + 'static>(&mut self, service:T) {
+	pub fn add_service<T:WindowRelativeProfileService + Send + Sync + 'static>(&mut self, mut service:T) {
+		service.install(&self.properties, self.task_system.task_scheduler());
 		self.services.push(Box::new(service));
+	}
+
+	/// Apply a service to the profile.
+	pub fn add_services<T:WindowRelativeProfileService + Send + Sync + 'static>(&mut self, services:Vec<T>) {
+		for service in services {
+			self.add_service(service);
+		}
 	}
 
 
