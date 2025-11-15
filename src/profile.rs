@@ -127,7 +127,7 @@ pub trait WindowRelativeProfileModifiers:WindowRelativeProfile {
 		}
 	}
 }
-impl<T:WindowRelativeProfile> WindowRelativeProfileModifiers for T {}
+impl<T:WindowRelativeProfile + ?Sized> WindowRelativeProfileModifiers for T {}
 
 
 
