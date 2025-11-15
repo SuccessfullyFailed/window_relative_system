@@ -20,7 +20,9 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 	fn core_mut(&mut self) -> &mut WindowRelativeProfileCore;
 
 	/// Gets ran with the event name whenever an event is triggered.
-	fn on_event(&mut self, _event_name:&str) {}
+	fn on_event(&mut self, _event_name:&str) -> Result<(), Box<dyn Error>> {
+		Ok(())
+	}
 
 
 
@@ -61,11 +63,71 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 	/* USAGE METHODS */
 
 	/// Trigger an event in the task-system.
-	fn trigger_event(&mut self, event_name:&str) {
-		self.on_event(event_name);
+	fn trigger_event(&mut self, event_name:&str) -> Result<(), Box<dyn Error>> {
+		self.trigger_event_with_window(event_name, &WindowController::active())
+	}
+
+	/// Trigger an event in the task-system using the given window.
+	fn trigger_event_with_window(&mut self, event_name:&str, window:&WindowController) -> Result<(), Box<dyn Error>> {
+		self.on_event(event_name)?;
+		self.core_mut().run_services_by_trigger(&window, WindowRelativeServiceTrigger::NamedEvent(event_name.to_string()))?;
 		self.task_system_mut().trigger_event(event_name);
+		Ok(())
+	}
+
+	/// Check if this is the active profile.
+	fn is_active(&self, window:&WindowController, active_process_name:&str, active_process_title:&str) -> bool {
+		(self.core().properties.active_checker)(&self.core().properties, &window, active_process_name, active_process_title)
 	}
 }
+
+
+pub trait WindowRelativeProfileModifiers:WindowRelativeProfile {
+
+	/// Set the active checker function.
+	fn set_active_checker<T>(&mut self, active_checker:T) where T:Fn(&WindowRelativeProfileProperties, &WindowController, &str, &str) -> bool + Send + Sync + 'static {
+		self.core_mut().properties.active_checker = Box::new(active_checker);
+	}
+
+	/// Add an additional profile open event handler.
+	fn add_open_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
+		self.core_mut().event_handlers.on_open.push(Box::new(handler));
+	}
+
+	/// Add an additional profile activate event handler.
+	fn add_activate_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
+		self.core_mut().event_handlers.on_activate.push(Box::new(handler));
+	}
+
+	/// Add an additional profile deactivate event handler.
+	fn add_deactivate_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
+		self.core_mut().event_handlers.on_deactivate.push(Box::new(handler));
+	}
+
+	/// Add an additional profile close event handler.
+	fn add_close_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
+		self.core_mut().event_handlers.on_close.push(Box::new(handler));
+	}
+
+	/// Add a task to the task-system.
+	fn add_task<T:TaskLike + Send + Sync + 'static>(&mut self, task:T) {
+		self.core_mut().task_system.add_task(task);
+	}
+
+	/// Apply a service to the profile.
+	fn add_service<T:WindowRelativeProfileService + Send + Sync + 'static>(&mut self, mut service:T) {
+		service.install(&self.core().properties, self.task_system().task_scheduler());
+		self.core_mut().services.push(Box::new(service));
+	}
+
+	/// Apply a service to the profile.
+	fn add_services<T:WindowRelativeProfileService + Send + Sync + 'static>(&mut self, services:Vec<T>) {
+		for service in services {
+			self.add_service(service);
+		}
+	}
+}
+impl<T:WindowRelativeProfile> WindowRelativeProfileModifiers for T {}
 
 
 
@@ -154,53 +216,6 @@ impl WindowRelativeProfileCore {
 	}
 
 
-	
-	/* REFERENCE VERSION OF BUILDER METHODS */
-
-	/// Set the active checker function.
-	pub fn set_active_checker<T>(&mut self, active_checker:T) where T:Fn(&WindowRelativeProfileProperties, &WindowController, &str, &str) -> bool + Send + Sync + 'static {
-		self.properties.active_checker = Box::new(active_checker);
-	}
-
-	/// Add an additional profile open event handler.
-	pub fn add_open_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
-		self.event_handlers.on_open.push(Box::new(handler));
-	}
-
-	/// Add an additional profile activate event handler.
-	pub fn add_activate_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
-		self.event_handlers.on_activate.push(Box::new(handler));
-	}
-
-	/// Add an additional profile deactivate event handler.
-	pub fn add_deactivate_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
-		self.event_handlers.on_deactivate.push(Box::new(handler));
-	}
-
-	/// Add an additional profile close event handler.
-	pub fn add_close_handler<T>(&mut self, handler:T) where T:Fn(&mut WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> EventHandlerResponse + Send + Sync + 'static {
-		self.event_handlers.on_close.push(Box::new(handler));
-	}
-
-	/// Add a task to the task-system.
-	pub fn add_task<T:TaskLike + Send + Sync + 'static>(&mut self, task:T) {
-		self.task_system.add_task(task);
-	}
-
-	/// Apply a service to the profile.
-	pub fn add_service<T:WindowRelativeProfileService + Send + Sync + 'static>(&mut self, mut service:T) {
-		service.install(&self.properties, self.task_system.task_scheduler());
-		self.services.push(Box::new(service));
-	}
-
-	/// Apply a service to the profile.
-	pub fn add_services<T:WindowRelativeProfileService + Send + Sync + 'static>(&mut self, services:Vec<T>) {
-		for service in services {
-			self.add_service(service);
-		}
-	}
-
-
 
 	/* PROPERTY GETTER METHODS */
 
@@ -236,20 +251,6 @@ impl WindowRelativeProfileCore {
 
 
 
-	/* USAGE METHODS */
-
-	/// Check if this is the active profile.
-	pub fn is_active(&self, window:&WindowController, active_process_name:&str, active_process_title:&str) -> bool {
-		(self.properties.active_checker)(&self.properties, &window, active_process_name, active_process_title)
-	}
-
-	/// Trigger an event in the task-system.
-	pub fn trigger_event(&mut self, event_name:&str) {
-		self.task_system.trigger_event(event_name);
-	}
-
-
-
 	/* EVENT HANDLER METHODS */
 
 	/// The profile was opened.
@@ -258,7 +259,7 @@ impl WindowRelativeProfileCore {
 		for handler in &self.event_handlers.on_open {
 			handler(&mut self.properties, self.task_system.task_scheduler(), new_window)?;
 		}
-		self.run_services_by_trigger(new_window, WindowRelativeServiceTrigger::OPEN)?;
+		self.run_services_by_trigger(new_window, WindowRelativeServiceTrigger::Open)?;
 		Ok(())
 	}
 
@@ -272,7 +273,7 @@ impl WindowRelativeProfileCore {
 		for handler in &self.event_handlers.on_activate {
 			handler(&mut self.properties, self.task_system.task_scheduler(), new_window)?;
 		}
-		self.run_services_by_trigger(new_window, WindowRelativeServiceTrigger::ACTIVATE)?;
+		self.run_services_by_trigger(new_window, WindowRelativeServiceTrigger::Activate)?;
 		self.task_system.run_once(&Instant::now());
 		Ok(())
 	}
@@ -283,7 +284,7 @@ impl WindowRelativeProfileCore {
 		for handler in &self.event_handlers.on_deactivate {
 			handler(&mut self.properties, self.task_system.task_scheduler(), deactivated_window)?;
 		}
-		self.run_services_by_trigger(deactivated_window, WindowRelativeServiceTrigger::DEACTIVATE)?;
+		self.run_services_by_trigger(deactivated_window, WindowRelativeServiceTrigger::Deactivate)?;
 		if !deactivated_window.is_visible() {
 			self.trigger_close_event(deactivated_window)?;
 		}
@@ -298,15 +299,15 @@ impl WindowRelativeProfileCore {
 		for handler in &self.event_handlers.on_close {
 			handler(&mut self.properties, self.task_system.task_scheduler(), deactivated_window)?;
 		}
-		self.run_services_by_trigger(deactivated_window, WindowRelativeServiceTrigger::CLOSE)?;
+		self.run_services_by_trigger(deactivated_window, WindowRelativeServiceTrigger::Close)?;
 		Ok(())
 	}
 
 	/// Run all services that have a specific trigger.
 	fn run_services_by_trigger(&mut self, window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 		for service in &mut self.services {
-			if service.when_to_trigger() & trigger == trigger {
-				service.run(&self.properties, self.task_system.task_scheduler(), window, trigger)?;
+			if service.when_to_trigger() & trigger.clone() {
+				service.run(&self.properties, self.task_system.task_scheduler(), window, trigger.clone())?;
 			}
 		}
 		Ok(())

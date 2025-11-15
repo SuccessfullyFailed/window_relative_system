@@ -13,3 +13,13 @@ pub use profile_service::*;
 
 pub use window_controller::WindowController;
 pub use task_syncer::*;
+
+
+
+#[cfg(test)]
+struct CoreWrapper(pub WindowRelativeProfileCore);
+#[cfg(test)]
+impl WindowRelativeProfile for CoreWrapper {
+	fn core(&self) -> &WindowRelativeProfileCore { &self.0 }
+	fn core_mut(&mut self) -> &mut WindowRelativeProfileCore { &mut self.0 }
+}

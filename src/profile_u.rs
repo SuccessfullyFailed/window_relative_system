@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
+	use crate::{ CoreWrapper, WindowRelativeProfile, WindowRelativeProfileCore };
 	use window_controller::WindowController;
-	use crate::WindowRelativeProfileCore;
 	use task_syncer::Task;
 	use std::sync::Mutex;
 	
@@ -13,18 +13,18 @@ mod tests {
 
 		let fake_window:WindowController = WindowController::from_hwnd(std::ptr::null_mut());
 
-		let mut profile:WindowRelativeProfileCore = WindowRelativeProfileCore::new("test_id", "test_title", "test_process_name.exe");
+		let mut profile:CoreWrapper = CoreWrapper(WindowRelativeProfileCore::new("test_id", "test_title", "test_process_name.exe"));
 		assert_eq!(profile.id(), "test_id");
 		assert_eq!(profile.title(), "test_title");
 		assert_eq!(profile.process_name(), "test_process_name.exe");
 		assert_eq!(profile.is_default_profile(), false);
 		assert_eq!(profile.is_active(&fake_window, "active_process_name", "active_process_title"), false);
 		assert_eq!(profile.is_active(&fake_window, "test_process_name.exe", "active_process_title"), true);
-		profile.trigger_activate_event(&fake_window).unwrap();
+		profile.core_mut().trigger_activate_event(&fake_window).unwrap();
 		assert!(HISTORY.lock().unwrap().is_empty());
-		profile.trigger_deactivate_event(&fake_window).unwrap();
+		profile.core_mut().trigger_deactivate_event(&fake_window).unwrap();
 		assert!(HISTORY.lock().unwrap().is_empty());
-		profile.trigger_open_event(&fake_window).unwrap();
+		profile.core_mut().trigger_open_event(&fake_window).unwrap();
 		assert!(HISTORY.lock().unwrap().is_empty());
 
 		// Create a new profile as the previous profile has already triggered the 'open' event on the first 'activation' event.

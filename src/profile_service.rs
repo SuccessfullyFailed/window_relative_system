@@ -1,32 +1,50 @@
-use std::{ error::Error, ops::{ BitAnd, BitOr } };
 use crate::WindowRelativeProfileProperties;
-use task_syncer::TaskScheduler;
 use window_controller::WindowController;
+use std::{ error::Error, ops::{BitAnd, BitOr} };
+use task_syncer::TaskScheduler;
 
 
 
-#[derive(Clone, Copy, PartialEq, Debug)]
-pub struct WindowRelativeServiceTrigger(u8);
-impl WindowRelativeServiceTrigger {
-	pub const NONE:WindowRelativeServiceTrigger = WindowRelativeServiceTrigger(0);
-	pub const OPEN:WindowRelativeServiceTrigger = WindowRelativeServiceTrigger(1);
-	pub const ACTIVATE:WindowRelativeServiceTrigger = WindowRelativeServiceTrigger(2);
-	pub const DEACTIVATE:WindowRelativeServiceTrigger = WindowRelativeServiceTrigger(4);
-	pub const CLOSE:WindowRelativeServiceTrigger = WindowRelativeServiceTrigger(8);
-	pub const ALL:WindowRelativeServiceTrigger = WindowRelativeServiceTrigger(0xFF);
-}
-impl BitAnd for WindowRelativeServiceTrigger {
-	type Output = WindowRelativeServiceTrigger;
-
-	fn bitand(self, rhs:Self) -> Self::Output {
-		WindowRelativeServiceTrigger(self.0 & rhs.0)
-	}
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum WindowRelativeServiceTrigger {
+	None,
+	Open,
+	Activate,
+	Deactivate,
+	Close,
+	All, // Does not include named events.
+	NamedEvent(String),
+	Combined(Vec<WindowRelativeServiceTrigger>)
 }
 impl BitOr for WindowRelativeServiceTrigger {
 	type Output = WindowRelativeServiceTrigger;
 
 	fn bitor(self, rhs:Self) -> Self::Output {
-		WindowRelativeServiceTrigger(self.0 | rhs.0)
+		match self {
+			WindowRelativeServiceTrigger::Combined(mut triggers) => {
+				triggers.push(rhs);
+				WindowRelativeServiceTrigger::Combined(triggers)
+			},
+			_ => WindowRelativeServiceTrigger::Combined(vec![self, rhs])
+		}
+	}
+}
+impl BitAnd for WindowRelativeServiceTrigger {
+	type Output = bool;
+
+	fn bitand(self, rhs:Self) -> Self::Output {
+		match self {
+			WindowRelativeServiceTrigger::Combined(triggers) => triggers.into_iter().any(|trigger| trigger & rhs.clone()),
+			WindowRelativeServiceTrigger::All => match rhs {
+				WindowRelativeServiceTrigger::Open => true,
+				WindowRelativeServiceTrigger::Activate => true,
+				WindowRelativeServiceTrigger::Deactivate => true,
+				WindowRelativeServiceTrigger::Close => true,
+				_ => false
+			},
+			WindowRelativeServiceTrigger::NamedEvent(event_l) => match rhs { WindowRelativeServiceTrigger::NamedEvent(event_r) => event_l == event_r, _ => false },
+			_ => self == rhs
+		}
 	}
 }
 
@@ -39,7 +57,7 @@ pub trait WindowRelativeProfileService:Send + Sync {
 
 	/// When the service should trigger.
 	fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
-		WindowRelativeServiceTrigger::NONE
+		WindowRelativeServiceTrigger::None
 	}
 
 	/// Install the service. This function is run when the service is applied to the profile.
