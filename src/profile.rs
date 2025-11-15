@@ -19,6 +19,9 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 	/// Get the core of the profile mutable.
 	fn core_mut(&mut self) -> &mut WindowRelativeProfileCore;
 
+	/// Gets ran with the event name whenever an event is triggered.
+	fn on_event(&mut self, _event_name:&str) {}
+
 
 
 	/* PROPERTY GETTER METHODS */
@@ -59,6 +62,7 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 
 	/// Trigger an event in the task-system.
 	fn trigger_event(&mut self, event_name:&str) {
+		self.on_event(event_name);
 		self.task_system_mut().trigger_event(event_name);
 	}
 }
