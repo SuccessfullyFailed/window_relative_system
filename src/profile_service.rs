@@ -64,6 +64,10 @@ pub trait WindowRelativeProfileService:Send + Sync {
 	fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
 	}
 
+	/// Update the service once. Runs every time the profile is ran.
+	fn update(&mut self) {
+	}
+
 	/// Run the service. Requires 'when_to_trigger' to be implemented to execute.
 	fn run(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, _trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 		Ok(())

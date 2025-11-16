@@ -62,6 +62,14 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 
 	/* USAGE METHODS */
 
+	/// Run the profile events once.
+	fn run_once(&mut self, now:&Instant) {
+		self.task_system_mut().run_once(now);
+		for service in &mut self.core_mut().services {
+			service.update();
+		}
+	}
+
 	/// Trigger an event in the task-system.
 	fn trigger_event(&mut self, event_name:&str) -> Result<(), Box<dyn Error>> {
 		self.trigger_event_with_window(event_name, &WindowController::active())
