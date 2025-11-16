@@ -24,6 +24,10 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 		Ok(())
 	}
 
+	/// Gets ran whenever the profile is updated once.
+	fn on_update(&mut self) {
+	}
+
 
 
 	/* PROPERTY GETTER METHODS */
@@ -68,6 +72,7 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 		for service in &mut self.core_mut().services {
 			service.update();
 		}
+		self.on_update();
 	}
 
 	/// Trigger an event in the task-system.
