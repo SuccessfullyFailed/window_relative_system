@@ -1,6 +1,6 @@
 use crate::WindowRelativeProfileProperties;
 use window_controller::WindowController;
-use std::{ error::Error, ops::{BitAnd, BitOr} };
+use std::{ error::Error, ops::BitOr };
 use task_syncer::TaskScheduler;
 
 
@@ -12,38 +12,56 @@ pub enum WindowRelativeServiceTrigger {
 	Activate,
 	Deactivate,
 	Close,
-	All, // Does not include named events.
 	NamedEvent(String),
-	Combined(Vec<WindowRelativeServiceTrigger>)
+	Combined(Vec<WindowRelativeServiceTrigger>),
+
+	StaticNamedEvent(&'static str),
+	StaticRef(&'static WindowRelativeServiceTrigger),
+	StaticCombined(&'static [WindowRelativeServiceTrigger])
+}
+impl WindowRelativeServiceTrigger {
+
+	/// Whether or not should trigger on the given trigger.
+	pub fn run_on_trigger(&self, rhs:&WindowRelativeServiceTrigger) -> bool {
+		match self {
+			WindowRelativeServiceTrigger::StaticCombined(triggers) => {
+				triggers.into_iter().any(|trigger| trigger.run_on_trigger(rhs))
+			},
+			WindowRelativeServiceTrigger::StaticRef(trigger) => {
+				trigger.run_on_trigger(rhs)
+			},
+			WindowRelativeServiceTrigger::StaticNamedEvent(event_l) => {
+				match rhs {
+					WindowRelativeServiceTrigger::NamedEvent(event_r) => event_l == event_r,
+					_ => false
+				}
+			},
+
+
+			WindowRelativeServiceTrigger::Combined(triggers) => {
+				triggers.into_iter().any(|trigger| trigger.run_on_trigger(rhs))
+			},
+			WindowRelativeServiceTrigger::NamedEvent(event_l) => {
+				match rhs {
+					WindowRelativeServiceTrigger::NamedEvent(event_r) => event_l == event_r,
+					_ => false
+				}
+			},
+			_ => self == rhs
+		}
+	}
 }
 impl BitOr for WindowRelativeServiceTrigger {
 	type Output = WindowRelativeServiceTrigger;
 
 	fn bitor(self, rhs:Self) -> Self::Output {
 		match self {
+			WindowRelativeServiceTrigger::StaticRef(trigger) => trigger.clone() | rhs,
 			WindowRelativeServiceTrigger::Combined(mut triggers) => {
 				triggers.push(rhs);
 				WindowRelativeServiceTrigger::Combined(triggers)
 			},
 			_ => WindowRelativeServiceTrigger::Combined(vec![self, rhs])
-		}
-	}
-}
-impl BitAnd for WindowRelativeServiceTrigger {
-	type Output = bool;
-
-	fn bitand(self, rhs:Self) -> Self::Output {
-		match self {
-			WindowRelativeServiceTrigger::Combined(triggers) => triggers.into_iter().any(|trigger| trigger & rhs.clone()),
-			WindowRelativeServiceTrigger::All => match rhs {
-				WindowRelativeServiceTrigger::Open => true,
-				WindowRelativeServiceTrigger::Activate => true,
-				WindowRelativeServiceTrigger::Deactivate => true,
-				WindowRelativeServiceTrigger::Close => true,
-				_ => false
-			},
-			WindowRelativeServiceTrigger::NamedEvent(event_l) => match rhs { WindowRelativeServiceTrigger::NamedEvent(event_r) => event_l == event_r, _ => false },
-			_ => self == rhs
 		}
 	}
 }

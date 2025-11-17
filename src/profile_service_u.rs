@@ -156,42 +156,6 @@ mod tests {
 	}
 
 	#[test]
-	fn test_profile_service_on_all() {
-		static mut VALIDATION_VARIABLE:u8 = 0;
-
-		struct TestService {}
-		impl WindowRelativeProfileService for TestService {
-			fn name(&self) -> &str {
-				"TestService"
-			}
-			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
-				WindowRelativeServiceTrigger::All
-			}
-			fn install(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
-				unsafe { VALIDATION_VARIABLE = 10; }
-			}
-			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, _trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
-				unsafe { VALIDATION_VARIABLE += 1; }
-				Ok(())
-			}
-		}
-
-		let mut profile:CoreWrapper = CoreWrapper(WindowRelativeProfileCore::new("id", "title", "process_name"));
-		profile.add_service(TestService {});
-		let window:WindowController = WindowController::active();
-
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 10);
-		profile.core_mut().trigger_activate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 12);
-		profile.core_mut().trigger_activate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 13);
-		profile.core_mut().trigger_deactivate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 14);
-		profile.core_mut().trigger_deactivate_event(&window).unwrap();
-		assert_eq!(unsafe { VALIDATION_VARIABLE }, 15);
-	}
-
-	#[test]
 	fn test_profile_service_on_named_event() {
 		static mut VALIDATION_VARIABLE:u8 = 0;
 
