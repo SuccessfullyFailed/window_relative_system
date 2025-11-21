@@ -133,6 +133,12 @@ pub trait WindowRelativeProfileModifiers:WindowRelativeProfile {
 		self.core_mut().services.push(Box::new(service));
 	}
 
+	/// Add a service that overrides all existing ones with the same name.
+	fn add_service_override<T:WindowRelativeProfileService + Send + Sync + 'static>(&mut self, service:T) {
+		self.core_mut().services.retain(|existing_service| existing_service.name() != service.name());
+		self.add_service(service);
+	}
+
 	/// Apply a service to the profile.
 	fn add_services<T:WindowRelativeProfileService + Send + Sync + 'static>(&mut self, services:Vec<T>) {
 		for service in services {
@@ -225,6 +231,12 @@ impl WindowRelativeProfileCore {
 	/// Return self with an applied service.
 	pub fn with_service<T:WindowRelativeProfileService + 'static>(mut self, service:T) -> Self {
 		self.add_service(service);
+		self
+	}
+
+	/// Return self with a service that overrides all existing ones with the same name.
+	pub fn with_service_override<T:WindowRelativeProfileService + 'static>(mut self, service:T) -> Self {
+		self.add_service_override(service);
 		self
 	}
 
