@@ -32,6 +32,11 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 
 	/* PROPERTY GETTER METHODS */
 
+	/// Get the properties of the profile.
+	fn properties(&self) -> &WindowRelativeProfileProperties {
+		self.core().properties()
+	}
+
 	/// Get the ID of the profile.
 	fn id(&self) -> &str {
 		self.core().id()
@@ -243,6 +248,11 @@ impl WindowRelativeProfileCore {
 
 
 	/* PROPERTY GETTER METHODS */
+
+	/// Get the properties of this profile.
+	pub fn properties(&self) -> &WindowRelativeProfileProperties {
+		&self.properties
+	}
 
 	/// Get the ID of the profile.
 	pub fn id(&self) -> &str {

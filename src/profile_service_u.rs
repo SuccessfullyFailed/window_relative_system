@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ CoreWrapper, WindowRelativeProfile, WindowRelativeProfileCore, WindowRelativeProfileModifiers, WindowRelativeProfileService, WindowRelativeServiceTrigger };
+	use crate::{ CoreWrapper, WindowRelativeProfile, WindowRelativeProfileCore, WindowRelativeProfileModifiers, WindowRelativeProfileProperties, WindowRelativeProfileService, WindowRelativeProfileServiceFunction, WindowRelativeServiceTrigger };
 	use window_controller::WindowController;
 	use task_syncer::TaskScheduler;
 	use std::error::Error;
@@ -235,5 +235,40 @@ mod tests {
 		assert_eq!(unsafe { VALIDATION_VARIABLE }, 10);
 		profile.core_mut().trigger_deactivate_event(&window).unwrap();
 		assert_eq!(unsafe { VALIDATION_VARIABLE }, 10);
+	}
+	
+	#[test]
+	fn test_service_convert_to_fn() {
+		static mut VALIDATION_VARIABLE:u8 = 0;
+
+		struct TestService {}
+		impl WindowRelativeProfileService for TestService {
+			fn name(&self) -> &str {
+				"TestService"
+			}
+			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
+				WindowRelativeServiceTrigger::None
+			}
+			fn install(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
+				unsafe { VALIDATION_VARIABLE = 10; }
+			}
+			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, _trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
+				unsafe { VALIDATION_VARIABLE += 1; }
+				Ok(())
+			}
+		}
+
+		let profile:CoreWrapper = CoreWrapper(WindowRelativeProfileCore::new("id", "title", "process_name"));
+		let window:WindowController = WindowController::active();
+		let mut service_fn:Box<dyn FnMut(&WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> Result<(), Box<dyn Error + 'static>>> = TestService {}.as_function();
+
+
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 0);
+		service_fn(profile.properties(), profile.task_system().task_scheduler(), &window).unwrap();
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 1);
+		service_fn(profile.properties(), profile.task_system().task_scheduler(), &window).unwrap();
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 2);
+		service_fn(profile.properties(), profile.task_system().task_scheduler(), &window).unwrap();
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 3);
 	}
 }
