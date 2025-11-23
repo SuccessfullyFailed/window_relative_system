@@ -19,10 +19,10 @@ mod tests {
 			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
 				WindowRelativeServiceTrigger::None
 			}
-			fn install(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
+			fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
 				unsafe { VALIDATION_VARIABLE = 10; }
 			}
-			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
+			fn run(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				assert_eq!(trigger, WindowRelativeServiceTrigger::Open);
 				unsafe { VALIDATION_VARIABLE += 1; }
 				Ok(())
@@ -56,10 +56,10 @@ mod tests {
 			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
 				WindowRelativeServiceTrigger::Open
 			}
-			fn install(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
+			fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
 				unsafe { VALIDATION_VARIABLE = 10; }
 			}
-			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
+			fn run(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				assert_eq!(trigger, WindowRelativeServiceTrigger::Open);
 				unsafe { VALIDATION_VARIABLE += 1; }
 				Ok(())
@@ -93,10 +93,10 @@ mod tests {
 			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
 				WindowRelativeServiceTrigger::Activate
 			}
-			fn install(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
+			fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
 				unsafe { VALIDATION_VARIABLE = 10; }
 			}
-			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
+			fn run(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				assert_eq!(trigger, WindowRelativeServiceTrigger::Activate);
 				unsafe { VALIDATION_VARIABLE += 1; }
 				Ok(())
@@ -130,10 +130,10 @@ mod tests {
 			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
 				WindowRelativeServiceTrigger::Deactivate
 			}
-			fn install(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
+			fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
 				unsafe { VALIDATION_VARIABLE = 10; }
 			}
-			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
+			fn run(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				assert_eq!(trigger, WindowRelativeServiceTrigger::Deactivate);
 				unsafe { VALIDATION_VARIABLE += 1; }
 				Ok(())
@@ -167,10 +167,10 @@ mod tests {
 			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
 				WindowRelativeServiceTrigger::NamedEvent("test_event".to_string())
 			}
-			fn install(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
+			fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
 				unsafe { VALIDATION_VARIABLE = 10; }
 			}
-			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, _trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
+			fn run(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, _trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				unsafe { VALIDATION_VARIABLE += 1; }
 				Ok(())
 			}
@@ -211,10 +211,10 @@ mod tests {
 			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
 				WindowRelativeServiceTrigger::None
 			}
-			fn install(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
+			fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
 				unsafe { VALIDATION_VARIABLE = 10; }
 			}
-			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
+			fn run(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				assert_eq!(trigger, WindowRelativeServiceTrigger::Open);
 				unsafe { VALIDATION_VARIABLE += 1; }
 				Ok(())
@@ -249,10 +249,10 @@ mod tests {
 			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
 				WindowRelativeServiceTrigger::None
 			}
-			fn install(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
+			fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
 				unsafe { VALIDATION_VARIABLE = 10; }
 			}
-			fn run(&mut self, _properties:&crate::WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, _trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
+			fn run(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler, _window:&WindowController, _trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 				unsafe { VALIDATION_VARIABLE += 1; }
 				Ok(())
 			}
@@ -269,6 +269,38 @@ mod tests {
 		service_fn(profile.properties(), profile.task_system().task_scheduler(), &window).unwrap();
 		assert_eq!(unsafe { VALIDATION_VARIABLE }, 2);
 		service_fn(profile.properties(), profile.task_system().task_scheduler(), &window).unwrap();
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 3);
+	}
+	
+	#[test]
+	fn test_service_convert_from_fn() {
+		static mut VALIDATION_VARIABLE:u8 = 0;
+
+		let service:Box<dyn Fn(&WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> Result<(), Box<dyn Error>> + Send + Sync + 'static> = Box::new(|_properties, _task_scheduler, _window| {
+			unsafe { VALIDATION_VARIABLE += 1; }
+			Ok(())
+		});
+
+		let mut profile:CoreWrapper = CoreWrapper(WindowRelativeProfileCore::new("id", "title", "process_name"));
+		profile.add_service(service);
+		let window:WindowController = WindowController::active();
+
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 0);
+		profile.core_mut().trigger_activate_event(&window).unwrap();
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 0);
+		profile.core_mut().trigger_activate_event(&window).unwrap();
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 0);
+		profile.core_mut().trigger_deactivate_event(&window).unwrap();
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 0);
+		profile.core_mut().trigger_deactivate_event(&window).unwrap();
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 0);
+		profile.core_mut().run_services_by_trigger(&window, WindowRelativeServiceTrigger::None).unwrap();
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 1);
+		profile.core_mut().run_services_by_trigger(&window, WindowRelativeServiceTrigger::None).unwrap();
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 2);
+		profile.core_mut().run_services_by_trigger(&window, WindowRelativeServiceTrigger::None).unwrap();
+		assert_eq!(unsafe { VALIDATION_VARIABLE }, 3);
+		profile.core_mut().run_services_by_trigger(&window, WindowRelativeServiceTrigger::Activate).unwrap();
 		assert_eq!(unsafe { VALIDATION_VARIABLE }, 3);
 	}
 }

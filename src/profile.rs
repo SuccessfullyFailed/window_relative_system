@@ -339,7 +339,7 @@ impl WindowRelativeProfileCore {
 	}
 
 	/// Run all services that have a specific trigger.
-	fn run_services_by_trigger(&mut self, window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
+	pub(crate) fn run_services_by_trigger(&mut self, window:&WindowController, trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
 		for service in &mut self.services {
 			if service.when_to_trigger().run_on_trigger(&trigger) {
 				service.run(&self.properties, self.task_system.task_scheduler(), window, trigger.clone())?;

@@ -91,6 +91,7 @@ pub trait WindowRelativeProfileService:Send + Sync {
 		Ok(())
 	}
 }
+
 pub trait WindowRelativeProfileServiceFunction:WindowRelativeProfileService + Sized + 'static {
 
 	/// Return the service as a single, runnable function.
@@ -102,3 +103,10 @@ pub trait WindowRelativeProfileServiceFunction:WindowRelativeProfileService + Si
 	}
 }
 impl<T:WindowRelativeProfileService + Sized + 'static> WindowRelativeProfileServiceFunction for T {}
+
+impl<T:Fn(&WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> Result<(), Box<dyn Error>> + Send + Sync + 'static> WindowRelativeProfileService for T {
+	fn name(&self) -> &str { "" }
+	fn run(&mut self, properties:&WindowRelativeProfileProperties, task_scheduler:&TaskScheduler, window:&WindowController, _trigger:WindowRelativeServiceTrigger) -> Result<(), Box<dyn Error>> {
+		self(properties, task_scheduler, window)
+	}
+}
