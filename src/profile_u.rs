@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ CoreWrapper, WindowRelativeProfile, WindowRelativeProfileCore };
+	use crate::{ TestCore, WindowRelativeProfileProperties, WindowRelativeProfileCore };
 	use window_controller::WindowController;
 	use task_syncer::Task;
 	use std::sync::Mutex;
@@ -13,7 +13,7 @@ mod tests {
 
 		let fake_window:WindowController = WindowController::from_hwnd(std::ptr::null_mut());
 
-		let mut profile:CoreWrapper = CoreWrapper(WindowRelativeProfileCore::new("test_id", "test_title", "test_process_name.exe"));
+		let mut profile:TestCore = TestCore(WindowRelativeProfileCore::new("test_id", "test_title", "test_process_name.exe"));
 		assert_eq!(profile.id(), "test_id");
 		assert_eq!(profile.title(), "test_title");
 		assert_eq!(profile.process_name(), "test_process_name.exe");

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ CoreWrapper, WindowRelativeProfile, WindowRelativeProfileCore, WindowRelativeProfileModifiers, WindowRelativeProfileProperties, WindowRelativeProfileService, WindowRelativeProfileServiceFunction, WindowRelativeServiceTrigger };
+	use crate::{ TestCore, WindowRelativeProfileFunctionality, WindowRelativeProfileCore, WindowRelativeProfileModifiers, WindowRelativeProfileProperties, WindowRelativeProfileService, WindowRelativeProfileServiceFunction, WindowRelativeServiceTrigger };
 	use window_controller::WindowController;
 	use task_syncer::TaskScheduler;
 	use std::error::Error;
@@ -16,7 +16,7 @@ mod tests {
 			fn name(&self) -> &str {
 				"TestService"
 			}
-			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
+			fn trigger_event_names(&self) -> WindowRelativeServiceTrigger {
 				WindowRelativeServiceTrigger::None
 			}
 			fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
@@ -29,7 +29,7 @@ mod tests {
 			}
 		}
 
-		let mut profile:CoreWrapper = CoreWrapper(WindowRelativeProfileCore::new("id", "title", "process_name"));
+		let mut profile:TestCore = TestCore(WindowRelativeProfileCore::new("id", "title", "process_name"));
 		profile.add_service(TestService {});
 		let window:WindowController = WindowController::active();
 
@@ -53,7 +53,7 @@ mod tests {
 			fn name(&self) -> &str {
 				"TestService"
 			}
-			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
+			fn trigger_event_names(&self) -> WindowRelativeServiceTrigger {
 				WindowRelativeServiceTrigger::Open
 			}
 			fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
@@ -66,7 +66,7 @@ mod tests {
 			}
 		}
 
-		let mut profile:CoreWrapper = CoreWrapper(WindowRelativeProfileCore::new("id", "title", "process_name"));
+		let mut profile:TestCore = TestCore(WindowRelativeProfileCore::new("id", "title", "process_name"));
 		profile.add_service(TestService {});
 		let window:WindowController = WindowController::active();
 
@@ -90,7 +90,7 @@ mod tests {
 			fn name(&self) -> &str {
 				"TestService"
 			}
-			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
+			fn trigger_event_names(&self) -> WindowRelativeServiceTrigger {
 				WindowRelativeServiceTrigger::Activate
 			}
 			fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
@@ -103,7 +103,7 @@ mod tests {
 			}
 		}
 
-		let mut profile:CoreWrapper = CoreWrapper(WindowRelativeProfileCore::new("id", "title", "process_name"));
+		let mut profile:TestCore = TestCore(WindowRelativeProfileCore::new("id", "title", "process_name"));
 		profile.add_service(TestService {});
 		let window:WindowController = WindowController::active();
 
@@ -127,7 +127,7 @@ mod tests {
 			fn name(&self) -> &str {
 				"TestService"
 			}
-			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
+			fn trigger_event_names(&self) -> WindowRelativeServiceTrigger {
 				WindowRelativeServiceTrigger::Deactivate
 			}
 			fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
@@ -140,7 +140,7 @@ mod tests {
 			}
 		}
 
-		let mut profile:CoreWrapper = CoreWrapper(WindowRelativeProfileCore::new("id", "title", "process_name"));
+		let mut profile:TestCore = TestCore(WindowRelativeProfileCore::new("id", "title", "process_name"));
 		profile.add_service(TestService {});
 		let window:WindowController = WindowController::active();
 
@@ -164,7 +164,7 @@ mod tests {
 			fn name(&self) -> &str {
 				"TestService"
 			}
-			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
+			fn trigger_event_names(&self) -> WindowRelativeServiceTrigger {
 				WindowRelativeServiceTrigger::NamedEvent("test_event".to_string())
 			}
 			fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
@@ -176,7 +176,7 @@ mod tests {
 			}
 		}
 
-		let mut profile:CoreWrapper = CoreWrapper(WindowRelativeProfileCore::new("id", "title", "process_name"));
+		let mut profile:TestCore = TestCore(WindowRelativeProfileCore::new("id", "title", "process_name"));
 		profile.add_service(TestService {});
 		let window:WindowController = WindowController::active();
 
@@ -208,7 +208,7 @@ mod tests {
 			fn name(&self) -> &str {
 				"TestService"
 			}
-			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
+			fn trigger_event_names(&self) -> WindowRelativeServiceTrigger {
 				WindowRelativeServiceTrigger::None
 			}
 			fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
@@ -221,7 +221,7 @@ mod tests {
 			}
 		}
 
-		let mut profile:CoreWrapper = CoreWrapper(WindowRelativeProfileCore::new("id", "title", "process_name"));
+		let mut profile:TestCore = TestCore(WindowRelativeProfileCore::new("id", "title", "process_name"));
 		profile.add_service(TestService {});
 		profile.add_service_override(TestService {});
 		let window:WindowController = WindowController::active();
@@ -246,7 +246,7 @@ mod tests {
 			fn name(&self) -> &str {
 				"TestService"
 			}
-			fn when_to_trigger(&self) -> WindowRelativeServiceTrigger {
+			fn trigger_event_names(&self) -> WindowRelativeServiceTrigger {
 				WindowRelativeServiceTrigger::None
 			}
 			fn install(&mut self, _properties:&WindowRelativeProfileProperties, _task_scheduler:&TaskScheduler) {
@@ -258,7 +258,7 @@ mod tests {
 			}
 		}
 
-		let profile:CoreWrapper = CoreWrapper(WindowRelativeProfileCore::new("id", "title", "process_name"));
+		let profile:TestCore = TestCore(WindowRelativeProfileCore::new("id", "title", "process_name"));
 		let window:WindowController = WindowController::active();
 		let mut service_fn:Box<dyn FnMut(&WindowRelativeProfileProperties, &TaskScheduler, &WindowController) -> Result<(), Box<dyn Error + 'static>>> = TestService {}.as_function();
 
@@ -281,7 +281,7 @@ mod tests {
 			Ok(())
 		});
 
-		let mut profile:CoreWrapper = CoreWrapper(WindowRelativeProfileCore::new("id", "title", "process_name"));
+		let mut profile:TestCore = TestCore(WindowRelativeProfileCore::new("id", "title", "process_name"));
 		profile.add_service(service);
 		let window:WindowController = WindowController::active();
 
