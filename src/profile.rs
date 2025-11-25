@@ -136,6 +136,17 @@ pub trait WindowRelativeProfile:WindowRelativeProfileCore {
 
 pub trait WindowRelativeProfileHandlerList:WindowRelativeProfile + Sized {
 	fn handlers(&mut self) -> &mut Vec<Arc<dyn Fn(&mut Self, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync>>;
+
+	/// Add a handler to the list.
+	fn add_handler<T:Fn(&mut Self, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync + 'static>(&mut self, handler:T) {
+		self.handlers().push(Arc::new(handler));
+	}
+
+	/// Return self with an added handler.
+	fn with_handler<T:Fn(&mut Self, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync + 'static>(mut self, handler:T) -> Self {
+		self.add_handler(handler);
+		self
+	}
 }
 
 
