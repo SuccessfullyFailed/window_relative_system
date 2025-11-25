@@ -1,20 +1,22 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ WindowRelativeProfileCore, WindowRelativeSystem };
+	use crate::{ TestCore, WindowRelativeProfile, WindowRelativeProfileProperties, WindowRelativeSystem };
 	use std::{ sync::Mutex, thread::sleep, time::Duration };
+	use task_syncer::TaskSystem;
 
+	
 
 	static TEST_PROFILE_ADDED:Mutex<bool> = Mutex::new(false);
-	const TEST_ID:&str = "test_id";
+
 
 
 	/* ADDING A PROFILE */
 
 	#[test]
 	fn test_system_add_profile() {
-		WindowRelativeSystem::add_profile(WindowRelativeProfileCore::new(TEST_ID, "test_title", "test_process_name.exe"));
+		WindowRelativeSystem::add_profile(TestCore::default());
 		WindowRelativeSystem::execute_on_all_profiles(|profile| {
-			if profile.id() == TEST_ID {
+			if profile.id() == TestCore::ID {
 				*TEST_PROFILE_ADDED.lock().unwrap() = true;
 			}
 		});
@@ -62,8 +64,8 @@ mod tests {
 		static VALIDATOR:Mutex<bool> = Mutex::new(false);
 		await_test_profile();
 
-		WindowRelativeSystem::execute_on_profile_by_id(TEST_ID, |profile| {
-			if profile.id() == TEST_ID {
+		WindowRelativeSystem::execute_on_profile_by_id(TestCore::ID, |profile| {
+			if profile.id() == TestCore::ID {
 				*VALIDATOR.lock().unwrap() = true;
 			}
 		});
@@ -73,13 +75,22 @@ mod tests {
 
 	#[test]
 	fn test_system_execute_on_all_profiles() {
+		use crate as window_relative_system;
+		#[window_relative_profile_creator_macro::window_relative_profile]
+		struct TestCoreB {}
+		impl WindowRelativeProfile for TestCoreB {}
+
 		static VALIDATOR_A:Mutex<bool> = Mutex::new(false);
 		static VALIDATOR_B:Mutex<bool> = Mutex::new(false);
 		await_test_profile();
-		WindowRelativeSystem::add_profile(WindowRelativeProfileCore::new("test_2", "", ""));
+		WindowRelativeSystem::add_profile(TestCoreB {
+			properties: WindowRelativeProfileProperties::new("test_2", "", ""),
+			task_system: TaskSystem::new(),
+			handlers: Vec::new()
+		});
 
 		WindowRelativeSystem::execute_on_all_profiles(|profile| {
-			if profile.id() == TEST_ID {
+			if profile.id() == TestCore::ID {
 				*VALIDATOR_A.lock().unwrap() = true;
 			}
 			if profile.id() == "test_2" {

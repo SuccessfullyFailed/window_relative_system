@@ -1,21 +1,51 @@
-use std::{ error::Error, time::Instant };
+use window_relative_profile_creator_macro::window_relative_profile;
+use std::{ any::Any, error::Error, sync::Arc, time::Instant };
 use window_controller::WindowController;
-use crate::WindowRelativeProfileService;
 use task_syncer::TaskSystem;
 
 
 
-pub trait WindowRelativeProfile:Send + Sync + 'static {
-	
-	/* REQUIRED PROPERTY GETTER METHODS */
-
+pub trait WindowRelativeProfileCore:Send + Sync + 'static {
 	fn properties(&self) -> &WindowRelativeProfileProperties;
 	fn properties_mut(&mut self) -> &mut WindowRelativeProfileProperties;
 	fn task_system(&mut self) -> &TaskSystem;
 	fn task_system_mut(&mut self) -> &mut TaskSystem;
+	fn as_any_mut(&mut self) -> &mut dyn Any;
+
+	/// Trigger an event in the task-system using the given window.
+	fn trigger_service_event_handlers_with_window(&mut self, _event_name:&str, _window:&WindowController) -> Result<(), Box<dyn Error>>;
+	
 
 
+	/* SUB-PROPERTY GETTER METHODS */
 
+	/// Get the ID of the profile.
+	fn id(&self) -> &str {
+		self.properties().id()
+	}
+
+	/// Get the title of the profile.
+	fn title(&self) -> &str {
+		self.properties().title()
+	}
+
+	/// Get the process-name of the profile.
+	fn process_name(&self) -> &str {
+		self.properties().process_name()
+	}
+
+	/// Whether or not this is the default profile.
+	fn is_default_profile(&self) -> bool {
+		self.properties().is_default_profile()
+	}
+
+	/// Wether or not this is the active profile.
+	fn is_active(&self, window:&WindowController, active_process_name:&str, active_process_title:&str) -> bool {
+		(self.properties().active_checker)(self.properties(), window, active_process_name, active_process_title)
+	}
+}
+pub trait WindowRelativeProfile:WindowRelativeProfileCore {
+	
 	/* EVENT HANDLER METHODS */
 
 	/// A custom handler for when the window profile is opened.
@@ -46,39 +76,10 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 	fn on_update(&mut self) -> Result<(), Box<dyn Error>> {
 		Ok(())
 	}
-	
 
 
-	/* SUB-PROPERTY GETTER METHODS */
 
-	/// Get the ID of the profile.
-	fn id(&self) -> &str {
-		self.properties().id()
-	}
-
-	/// Get the title of the profile.
-	fn title(&self) -> &str {
-		self.properties().title()
-	}
-
-	/// Get the process-name of the profile.
-	fn process_name(&self) -> &str {
-		self.properties().process_name()
-	}
-
-	/// Whether or not this is the default profile.
-	fn is_default_profile(&self) -> bool {
-		self.properties().is_default_profile()
-	}
-
-	/// Wether or not this is the active profile.
-	fn is_active(&self, _window:&WindowController, active_process_name:&str, _active_process_title:&str) -> bool {
-		active_process_name == self.process_name()
-	}
-	
-
-
-	/* USAGE METHODS */
+	/* EVENT HANDLER METHODS */
 
 	/// Trigger an event in the profile.
 	fn trigger_event(&mut self, event_name:&str) -> Result<(), Box<dyn Error>> {
@@ -115,10 +116,10 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 			"deactivate" => {
 				self.properties_mut().is_active = false;
 				self.task_system_mut().pause();
+				self.on_deactivate()?;
 				if !window.is_visible() {
 					self.trigger_event_with_window("close", window)?;
 				}
-				self.on_deactivate()?;
 			},
 			"close" => {
 				self.properties_mut().is_opened = false;
@@ -129,24 +130,25 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 		self.task_system_mut().trigger_event(event_name);
 		Ok(())
 	}
-
-	/// Trigger an event in the task-system using the given window.
-	fn trigger_service_event_handlers_with_window(&mut self, _event_name:&str, _window:&WindowController) -> Result<(), Box<dyn Error>> {
-		Ok(())
-	}
 }
-pub trait WindowRelativeProfileServices:WindowRelativeProfile + Sized {
-	fn services(&mut self) -> &mut Vec<Box<dyn WindowRelativeProfileService<Self>>>;
 
-	/// Trigger an event in the task-system using the given window.
-	fn trigger_service_event_handlers_with_window(&mut self, event_name:&str, window:&WindowController) -> Result<(), Box<dyn Error>> {
-		let mut services:Vec<Box<dyn WindowRelativeProfileService<Self>>> = std::mem::take(self.services());
-		for service in &mut services {
-			service.run(self, window, event_name)?;
-		}
-		*self.services() = services;
-		Ok(())
+
+
+pub trait WindowRelativeProfileHandlerList:WindowRelativeProfile + Sized {
+	fn handlers(&mut self) -> &mut Vec<Arc<dyn Fn(&mut Self, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync>>;
+}
+
+
+
+pub trait WindowRelativeProfileEvents {
+
+	/// Trigger an event in the profile.
+	fn trigger_event(&mut self, event_name:&str) -> Result<(), Box<dyn Error>> {
+		self.trigger_event_with_window(event_name, &WindowController::active())
 	}
+
+	/// Trigger an event in the profile using the given window.
+	fn trigger_event_with_window(&mut self, event_name:&str, window:&WindowController) -> Result<(), Box<dyn Error>>;
 }
 
 
@@ -157,6 +159,7 @@ pub struct WindowRelativeProfileProperties {
 	process_name:String,
 	is_default_profile:bool,
 	
+	active_checker:Box<dyn Fn(&WindowRelativeProfileProperties, &WindowController, &str, &str) -> bool + Send + Sync>,
 	is_opened:bool,
 	is_active:bool
 }
@@ -172,6 +175,7 @@ impl WindowRelativeProfileProperties {
 			process_name: process_name.to_string(),
 			is_default_profile: false,
 
+			active_checker: Box::new(|properties, _window, active_process_name, _active_process_title| active_process_name == properties.process_name()),
 			is_opened: false,
 			is_active: false
 		}
@@ -180,6 +184,12 @@ impl WindowRelativeProfileProperties {
 	/// Return self with the default profile flag set to true.
 	pub fn with_is_default(mut self) -> Self {
 		self.is_default_profile = true;
+		self
+	}
+
+	/// Return self with another active checker.
+	pub fn with_active_checker<T:Fn(&WindowRelativeProfileProperties, &WindowController, &str, &str) -> bool + Send + Sync + 'static>(mut self, checker:T) -> Self {
+		self.active_checker = Box::new(checker);
 		self
 	}
 
@@ -210,24 +220,16 @@ impl WindowRelativeProfileProperties {
 
 
 
-pub(crate) struct WindowRelativeDefaultProfile {
-	properties:WindowRelativeProfileProperties,
-	task_system:TaskSystem
-}
-impl WindowRelativeProfile for WindowRelativeDefaultProfile {
-	fn properties(&self) -> &WindowRelativeProfileProperties { &self.properties }
-	fn properties_mut(&mut self) -> &mut WindowRelativeProfileProperties { &mut self.properties }
-	fn task_system(&mut self) -> &TaskSystem { &self.task_system }
-	fn task_system_mut(&mut self) -> &mut TaskSystem { &mut self.task_system }
-	fn is_active(&self, _window:&WindowController, _active_process_name:&str, _active_process_title:&str) -> bool {
-		false
-	}
-}
+use crate as window_relative_system;
+#[window_relative_profile]
+pub(crate) struct WindowRelativeDefaultProfile {}
+impl WindowRelativeProfile for WindowRelativeDefaultProfile {}
 impl Default for WindowRelativeDefaultProfile {
 	fn default() -> Self {
 		WindowRelativeDefaultProfile {
 			properties: WindowRelativeProfileProperties::new("DEFAULT_PROFILE_ID", "DEFAULT_PROFILE_TITLE", "DEFAULT_PROFILE_PROCESS_NAME").with_is_default(),
-			task_system: TaskSystem::new()
+			task_system: TaskSystem::new(),
+			handlers: Vec::new()
 		}
 	}
 }

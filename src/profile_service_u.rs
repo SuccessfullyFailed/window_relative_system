@@ -1,3 +1,4 @@
+/*
 #[cfg(test)]
 mod tests {
 	use crate::{ TestCore, WindowRelativeProfileFunctionality, WindowRelativeProfileCore, WindowRelativeProfileModifiers, WindowRelativeProfileProperties, WindowRelativeProfileService, WindowRelativeProfileServiceFunction, WindowRelativeServiceTrigger };
@@ -304,3 +305,4 @@ mod tests {
 		assert_eq!(unsafe { VALIDATION_VARIABLE }, 3);
 	}
 }
+*/

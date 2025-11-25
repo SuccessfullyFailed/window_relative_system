@@ -7,3 +7,4 @@ edition = "2024"
 window_controller={ version="0.1.1", git="https://github.com/SuccessfullyFailed/window_controller" }
 task_syncer={ version="0.1.4", git="https://github.com/SuccessfullyFailed/task_syncer" }
 winapi={ version="0.3", features=["winuser"] }
+window_relative_profile_creator_macro={ path="window_relative_profile_creator_macro" }
