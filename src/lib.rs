@@ -16,7 +16,7 @@ pub use task_syncer::*;
 #[cfg(test)]
 use crate as window_relative_system;
 #[cfg(test)]
-#[window_relative_profile_creator_macro::window_relative_profile]
+#[window_relative_profile_creator_macro::window_relative_profile(TEST_PROFILE_ID, TEST_PROFILE_TITLE, TEST_PROFILE_PROCESS_NAME)]
 pub(crate) struct TestCore {}
 #[cfg(test)]
 impl TestCore {
@@ -26,13 +26,3 @@ impl TestCore {
 }
 #[cfg(test)]
 impl WindowRelativeProfile for TestCore {}
-#[cfg(test)]
-impl Default for TestCore {
-	fn default() -> Self {
-		TestCore {
-			properties: WindowRelativeProfileProperties::new(TestCore::ID, TestCore::TITLE, TestCore::PROCESS_NAME),
-			task_system: TaskSystem::new(),
-			handlers: Vec::new()
-		}
-	}
-}

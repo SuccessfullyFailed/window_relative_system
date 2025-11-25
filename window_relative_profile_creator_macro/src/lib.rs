@@ -1,13 +1,14 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ parse_macro_input, ItemStruct, Field, FieldsNamed };
+use syn::{ Field, FieldsNamed, Ident, ItemStruct, parse_macro_input };
 
 
 
 #[proc_macro_attribute]
-pub fn window_relative_profile(_attr:TokenStream, item:TokenStream) -> TokenStream {
-	let mut ast = parse_macro_input!(item as ItemStruct);
-	let struct_name = &ast.ident;
+pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStream {
+	let mut ast:ItemStruct = parse_macro_input!(item as ItemStruct);
+	let struct_name:&Ident = &ast.ident;
+	let arg_names:Vec<String> = attr.into_iter().filter_map(|tt| if let proc_macro::TokenTree::Ident(ident) = tt { Some(ident.to_string()) } else { None }).collect();
 
 	// ---- Create the injected fields ----
 	let injected_fields: Vec<Field> = vec![
@@ -26,7 +27,7 @@ pub fn window_relative_profile(_attr:TokenStream, item:TokenStream) -> TokenStre
 	}
 
 	// ---- Implement the trait ----
-	let trait_impl = quote! {
+	let trait_impl:proc_macro2::TokenStream = quote! {
 		use window_relative_system::{ WindowRelativeProfile as _, WindowRelativeProfileHandlerList as _ };
 		impl window_relative_system::WindowRelativeProfileCore for #struct_name {
 			#[inline]
@@ -56,9 +57,26 @@ pub fn window_relative_profile(_attr:TokenStream, item:TokenStream) -> TokenStre
 		}
 	};
 
+	// Implement Default.
+	let new_impl:proc_macro2::TokenStream = match arg_names.as_slice() {
+		[id, title, process_name] => quote! {
+			impl Default for TestCore {
+				fn default() -> Self {
+					TestCore {
+						properties: window_relative_system::WindowRelativeProfileProperties::new(#id, #title, #process_name),
+						task_system: window_relative_system::TaskSystem::new(),
+						handlers: Vec::new()
+					}
+				}
+			}
+		},
+		_ => quote! { }
+	};
+
 	// ---- Output modified struct + trait impl ----
 	TokenStream::from(quote! {
 		#ast
 		#trait_impl
+		#new_impl
 	})
 }
