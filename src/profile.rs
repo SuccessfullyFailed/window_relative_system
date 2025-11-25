@@ -134,8 +134,9 @@ pub trait WindowRelativeProfile:WindowRelativeProfileCore {
 
 
 
+pub type WindowRelativeProfileHandler<T> = Arc<dyn Fn(&mut T, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync>;
 pub trait WindowRelativeProfileHandlerList:WindowRelativeProfile + Sized {
-	fn handlers(&mut self) -> &mut Vec<Arc<dyn Fn(&mut Self, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync>>;
+	fn handlers(&mut self) -> &mut Vec<WindowRelativeProfileHandler<Self>>;
 
 	/// Add a handler to the list.
 	fn add_handler<T:Fn(&mut Self, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync + 'static>(&mut self, handler:T) {
