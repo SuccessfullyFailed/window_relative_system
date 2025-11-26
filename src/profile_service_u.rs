@@ -2,7 +2,7 @@
 mod tests {
 	use crate::{ TestCore, WindowRelativeProfile, WindowRelativeProfileHandlerList, WindowRelativeProfileService };
 	use window_controller::WindowController;
-	use std::{error::Error, ptr};
+	use std::{ error::Error, ptr };
 
 
 
@@ -13,8 +13,8 @@ mod tests {
 
 		struct TestService {}
 		impl<T> WindowRelativeProfileService<T> for TestService {
-			fn trigger_event_names(&self) -> &[&str] {
-				&["open", "activate", "deactivate", "close", "update", "test_event"]
+			fn trigger_on_event(&self, event_name:&str) -> bool {
+				["open", "activate", "deactivate", "close", "update", "test_event"].contains(&event_name)
 			}
 			fn run(&self, _profile:&mut T, _window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
 				unsafe { HISTORY.push(event_name.to_string()); }
@@ -47,8 +47,8 @@ mod tests {
 
 		struct TestService {}
 		impl<T> WindowRelativeProfileService<T> for TestService {
-			fn trigger_event_names(&self) -> &[&str] {
-				&["once"]
+			fn trigger_once(&self) -> bool {
+				true
 			}
 			fn run(&self, _profile:&mut T, _window:&WindowController, _event_name:&str) -> Result<(), Box<dyn Error>> {
 				unsafe { WAS_TRIGGERED = true; }

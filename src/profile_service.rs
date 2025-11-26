@@ -46,11 +46,9 @@ impl<ProfileStruct> WindowRelativeProfileServiceSet<ProfileStruct> {
 	pub fn run(&self, profile:&mut ProfileStruct, window:&WindowController, event_name:&str) -> Result<Vec<usize>, Box<dyn Error>> {
 		let mut expired:Vec<usize> = Vec::new();
 		for (index,service) in self.0.iter().enumerate() {
-			let run:bool = service.trigger_event_names().contains(&event_name) || service.trigger_event_names().contains(&"*");
-			let run_once:bool = service.trigger_event_names() == &["once"];
-			if run || run_once {
+			if service.trigger_on_event(event_name) {
 				service.run(profile, window, event_name)?;
-				if run_once {
+				if service.trigger_once() {
 					expired.push(index);
 				}
 			}
@@ -68,9 +66,14 @@ impl<T> Clone for WindowRelativeProfileServiceSet<T> {
 
 pub trait WindowRelativeProfileService<ProfileStruct>:Send + Sync {
 
-	/// When the service should trigger.
-	fn trigger_event_names(&self) -> &[&str] {
-		&["*"]
+	/// Whether or not the service should only trigger once.
+	fn trigger_once(&self) -> bool {
+		false
+	}
+
+	/// Whether or not the service should trigger on the given event.
+	fn trigger_on_event(&self, _event_name:&str) -> bool {
+		true
 	}
 
 	/// Run the service. Requires 'when_to_trigger' to be implemented to execute.
