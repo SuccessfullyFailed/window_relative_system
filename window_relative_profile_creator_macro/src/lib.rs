@@ -42,12 +42,11 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 			fn as_any_mut(&mut self) -> &mut dyn std::any::Any { self }
 			#[inline]
 			fn trigger_service_event_handlers_with_window(&mut self, event_name:&str, window:&window_relative_system::WindowController) -> Result<(), Box<dyn std::error::Error>> {
-				let services = self.services().cloned_iter();
+				let services = self.services().clone();
 				let concrete_self:&mut #struct_name = self.as_any_mut().downcast_mut::<#struct_name>().expect("Type mismatch in run_handlers");
-				for service in services {
-					if service.trigger_event_names().contains(&event_name) || service.trigger_event_names().contains(&"*") {
-						service.run(concrete_self, window, event_name)?;
-					}
+				let expired = services.run(concrete_self, window, event_name)?;
+				for index in expired.into_iter().rev() {
+					self.services.remove(index);
 				}
 				Ok(())
 			}

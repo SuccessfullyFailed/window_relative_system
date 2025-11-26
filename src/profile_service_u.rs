@@ -40,4 +40,28 @@ mod tests {
 			}
 		}
 	}
+
+	#[test]
+	fn test_profile_service_trigger_once() {
+		static mut WAS_TRIGGERED:bool = false;
+
+		struct TestService {}
+		impl<T> WindowRelativeProfileService<T> for TestService {
+			fn trigger_event_names(&self) -> &[&str] {
+				&["once"]
+			}
+			fn run(&self, _profile:&mut T, _window:&WindowController, _event_name:&str) -> Result<(), Box<dyn Error>> {
+				unsafe { WAS_TRIGGERED = true; }
+				Ok(())
+			}
+		}
+
+		let mut profile:TestCore = TestCore::default();
+		profile.add_service(TestService {});
+		
+		assert_eq!(profile.services.len(), 1);
+		profile.trigger_event("").unwrap();
+		assert_eq!(profile.services.len(), 0);
+		assert!(unsafe { WAS_TRIGGERED });
+	}
 }
