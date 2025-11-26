@@ -14,7 +14,7 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 	let injected_fields: Vec<Field> = vec![
 		syn::parse_quote!(pub properties:window_relative_system::WindowRelativeProfileProperties),
 		syn::parse_quote!(pub task_system:window_relative_system::TaskSystem),
-		syn::parse_quote!(pub handlers:Vec<std::sync::Arc<dyn Fn(&mut Self, &window_relative_system::WindowController, &str) -> Result<(), Box<dyn std::error::Error>> + Send + Sync>>)
+		syn::parse_quote!(pub services:window_relative_system::WindowRelativeProfileServiceSet<Self>)
 	];
 
 	// ---- Insert into the struct ----
@@ -28,7 +28,7 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 
 	// ---- Implement the trait ----
 	let trait_impl:proc_macro2::TokenStream = quote! {
-		use window_relative_system::{ WindowRelativeProfile as _, WindowRelativeProfileHandlerList as _ };
+		use window_relative_system::{ WindowRelativeProfileHandlerList as _ };
 		impl window_relative_system::WindowRelativeProfileCore for #struct_name {
 			#[inline]
 			fn properties(&self) -> &window_relative_system::WindowRelativeProfileProperties { &self.properties }
@@ -42,17 +42,19 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 			fn as_any_mut(&mut self) -> &mut dyn std::any::Any { self }
 			#[inline]
 			fn trigger_service_event_handlers_with_window(&mut self, event_name:&str, window:&window_relative_system::WindowController) -> Result<(), Box<dyn std::error::Error>> {
-				let handlers:Vec<std::sync::Arc<dyn Fn(&mut #struct_name, &window_relative_system::WindowController, &str) -> Result<(), Box<dyn std::error::Error>> + Send + Sync>> = self.handlers().clone();
+				let services = self.services().cloned_iter();
 				let concrete_self:&mut #struct_name = self.as_any_mut().downcast_mut::<#struct_name>().expect("Type mismatch in run_handlers");
-				for handler in handlers {
-					handler(concrete_self, window, event_name)?;
+				for service in services {
+					if service.trigger_event_names().contains(&event_name) || service.trigger_event_names().contains(&"*") {
+						service.run(concrete_self, window, event_name)?;
+					}
 				}
 				Ok(())
 			}
 		}
 		impl window_relative_system::WindowRelativeProfileHandlerList for #struct_name {
-			fn handlers(&mut self) -> &mut Vec<std::sync::Arc<dyn Fn(&mut Self, &window_relative_system::WindowController, &str) -> Result<(), Box<dyn std::error::Error>> + Send + Sync>> {
-				&mut self.handlers
+			fn services(&mut self) -> &mut window_relative_system::WindowRelativeProfileServiceSet<Self> {
+				&mut self.services
 			}
 		}
 	};
@@ -65,7 +67,7 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 					TestCore {
 						properties: window_relative_system::WindowRelativeProfileProperties::new(#id, #title, #process_name),
 						task_system: window_relative_system::TaskSystem::new(),
-						handlers: Vec::new()
+						services: window_relative_system::WindowRelativeProfileServiceSet::new()
 					}
 				}
 			}

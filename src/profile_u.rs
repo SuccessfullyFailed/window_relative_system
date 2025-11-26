@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ TestCore, WindowRelativeProfile, WindowRelativeProfileCore, WindowRelativeProfileProperties };
+	use crate::{ TestCore, WindowRelativeProfile, WindowRelativeProfileCore, WindowRelativeProfileProperties, WindowRelativeProfileServiceSet };
 	use window_controller::WindowController;
 	use task_syncer::{Task, TaskSystem};
 	use std::sync::Mutex;
@@ -42,7 +42,7 @@ mod tests {
 					.with_is_default()
 					.with_active_checker(|_, _, process_name, _| process_name == "second_test_process_name.exe"),
 			task_system: TaskSystem::new(),
-			handlers: Vec::new()
+			services: WindowRelativeProfileServiceSet::new()
 		};
 		profile.task_system.add_task(Task::new("test_task", |_, _| { HISTORY.lock().unwrap().push("handled task".to_string()); Ok(()) }));
 		
