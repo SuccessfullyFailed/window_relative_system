@@ -64,4 +64,18 @@ mod tests {
 		assert_eq!(profile.services.len(), 0);
 		assert!(unsafe { WAS_TRIGGERED });
 	}
+
+	#[test]
+	fn test_profile_service_from_fn() {
+		static mut WAS_TRIGGERED:bool = false;
+
+		let mut profile:TestCore = TestCore::default();
+		profile.add_service(|_self:&mut TestCore, _window:&WindowController, _event:&str| {
+			unsafe { WAS_TRIGGERED = true; }
+			Ok(())
+		});
+		
+		profile.trigger_event("").unwrap();
+		assert!(unsafe { WAS_TRIGGERED });
+	}
 }
