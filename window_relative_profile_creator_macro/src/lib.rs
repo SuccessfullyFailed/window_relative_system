@@ -61,9 +61,9 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 	// Implement Default.
 	let new_impl:proc_macro2::TokenStream = match arg_names.as_slice() {
 		[id, title, process_name] => quote! {
-			impl Default for TestCore {
+			impl Default for #struct_name {
 				fn default() -> Self {
-					TestCore {
+					#struct_name {
 						properties: window_relative_system::WindowRelativeProfileProperties::new(#id, #title, #process_name),
 						task_system: window_relative_system::TaskSystem::new(),
 						services: window_relative_system::WindowRelativeProfileServiceSet::new()
