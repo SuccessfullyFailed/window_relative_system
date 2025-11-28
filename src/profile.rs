@@ -139,14 +139,14 @@ pub trait WindowRelativeProfile:WindowRelativeProfileCore {
 pub trait WindowRelativeProfileHandlerList:WindowRelativeProfile + Sized {
 	fn services(&mut self) -> &mut WindowRelativeProfileServiceSet<Self>;
 
-	/// Add a handler to the list.
+	/// Add a service to the list.
 	fn add_service<T:WindowRelativeProfileService<Self> + 'static>(&mut self, service:T) {
 		self.services().add_service(service);
 	}
 
-	/// Return self with an added handler.
-	fn with_service<T:Fn(&mut Self, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync + 'static>(mut self, handler:T) -> Self {
-		self.add_service(handler);
+	/// Return self with an added service.
+	fn with_service<T:WindowRelativeProfileService<Self> + 'static>(mut self, service:T) -> Self {
+		self.add_service(service);
 		self
 	}
 }
