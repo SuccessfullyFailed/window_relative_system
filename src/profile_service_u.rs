@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ TestCore, WindowRelativeProfile, WindowRelativeProfileHandlerList, WindowRelativeProfileService };
+	use crate::{ TestCore, WindowRelativeProfile, WindowRelativeProfileSized, WindowRelativeProfileService };
 	use window_controller::WindowController;
 	use std::{ error::Error, ptr };
 

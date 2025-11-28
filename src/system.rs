@@ -150,16 +150,9 @@ impl WindowRelativeSystem {
 			}
 		}).flatten()
 	}
-
-	/// Execute an action on all profiles. Excludes the DefaultProfile.
-	pub fn execute_on_all_profiles<T, U>(action:T) -> Vec<U> where T:Fn(&mut dyn WindowRelativeProfile) -> U {
-		Self::execute_on_system(|system| {
-			(1..system.profiles.len()).map(|profile_index| action(&mut *system.profiles[profile_index])).collect()
-		}).unwrap_or_default()
-	}
-
+	
 	/// Execute an action on all profiles. Includes the DefaultProfile.
-	pub fn execute_on_all_profiles_and_default<T, U>(action:T) -> Vec<U> where T:Fn(&mut dyn WindowRelativeProfile) -> U {
+	pub fn execute_on_all_profiles<T, U>(action:T) -> Vec<U> where T:Fn(&mut dyn WindowRelativeProfile) -> U {
 		Self::execute_on_system(|system| {
 			(0..system.profiles.len()).map(|profile_index| action(&mut *system.profiles[profile_index])).collect()
 		}).unwrap_or_default()

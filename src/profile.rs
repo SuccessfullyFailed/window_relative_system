@@ -136,8 +136,22 @@ pub trait WindowRelativeProfile:WindowRelativeProfileCore {
 
 
 
-pub trait WindowRelativeProfileHandlerList:WindowRelativeProfile + Sized {
+pub trait WindowRelativeProfileSized:WindowRelativeProfile + Sized {
 	fn services(&mut self) -> &mut WindowRelativeProfileServiceSet<Self>;
+
+
+
+	/* BUILDER METHODS */
+	
+	/// Return self with a new active checker.
+	fn with_active_checker<T:Fn(&WindowRelativeProfileProperties, &WindowController, &str, &str) -> bool + Send + Sync + 'static>(mut self, checker:T) -> Self {
+		self.properties_mut().active_checker = Box::new(checker);
+		self
+	}
+
+
+
+	/* SERVICE METHODS */
 
 	/// Add a service to the list.
 	fn add_service<T:WindowRelativeProfileService<Self> + 'static>(&mut self, service:T) {
@@ -200,7 +214,7 @@ impl WindowRelativeProfileProperties {
 		self
 	}
 
-	/// Return self with another active checker.
+	/// Return self with a new active checker.
 	pub fn with_active_checker<T:Fn(&WindowRelativeProfileProperties, &WindowController, &str, &str) -> bool + Send + Sync + 'static>(mut self, checker:T) -> Self {
 		self.active_checker = Box::new(checker);
 		self
