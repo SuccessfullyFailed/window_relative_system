@@ -129,6 +129,18 @@ impl WindowRelativeSystem {
 		Some(action(system))
 	}
 
+	/// Execute an action on a profile by type. Uses system error handler if profile cannot be found.
+	pub fn execute_on_profile<T, U, V:'static>(action:T) -> Option<U> where T:Fn(&mut V) -> U {
+		Self::execute_on_system(|system| {
+			for profile in &mut system.profiles {
+				if let Some(profile) = profile.as_any_mut().downcast_mut::<V>() {
+					return Some(action(profile));
+				}
+			}
+			None
+		}).flatten()
+	}
+
 	/// Execute an action on the current profile.
 	pub fn execute_on_current_profile<T, U>(action:T) -> Option<U> where T:Fn(&mut dyn WindowRelativeProfile) -> U {
 		Self::execute_on_system(|system| {
