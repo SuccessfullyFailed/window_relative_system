@@ -13,6 +13,7 @@ pub use profile_service::*;
 
 pub use window_controller::WindowController;
 pub use task_syncer::*;
+pub use window_relative_profile_creator_macro::window_relative_profile;
 
 
 
