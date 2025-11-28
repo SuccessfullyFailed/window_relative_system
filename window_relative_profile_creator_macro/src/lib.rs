@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ Field, FieldsNamed, Ident, ItemStruct, parse_macro_input };
+use syn::{ Expr, Field, FieldsNamed, Ident, ItemStruct, Lit, parse_macro_input, punctuated::Punctuated, Token, ExprLit };
 
 
 
@@ -8,7 +8,14 @@ use syn::{ Field, FieldsNamed, Ident, ItemStruct, parse_macro_input };
 pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStream {
 	let mut ast:ItemStruct = parse_macro_input!(item as ItemStruct);
 	let struct_name:&Ident = &ast.ident;
-	let arg_names:Vec<String> = attr.into_iter().filter_map(|tt| if let proc_macro::TokenTree::Ident(ident) = tt { Some(ident.to_string()) } else { None }).collect();
+	let args:Punctuated<Expr, syn::token::Comma> = parse_macro_input!(attr with Punctuated::<Expr, Token![,]>::parse_terminated);
+	let arg_names:Vec<String> = args.into_iter().filter_map(|expr| {
+		match expr {
+			Expr::Lit(ExprLit { lit: Lit::Str(s), .. }) => Some(s.value()),
+			Expr::Path(path) => path.path.get_ident().map(|i| i.to_string()),
+			_ => None
+		}
+	}).collect();
 
 	// Create extra fields.
 	let injected_fields:Vec<Field> = vec![
@@ -59,7 +66,6 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 	};
 
 	// Implement Default implementation.
-	println!("{}\t{:?}", struct_name, arg_names);
 	let new_impl:proc_macro2::TokenStream = match arg_names.as_slice() {
 		[id, title, process_name] => quote! {
 			impl Default for #struct_name {
