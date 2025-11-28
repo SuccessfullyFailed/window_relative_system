@@ -10,23 +10,23 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 	let struct_name:&Ident = &ast.ident;
 	let arg_names:Vec<String> = attr.into_iter().filter_map(|tt| if let proc_macro::TokenTree::Ident(ident) = tt { Some(ident.to_string()) } else { None }).collect();
 
-	// ---- Create the injected fields ----
-	let injected_fields: Vec<Field> = vec![
+	// Create extra fields.
+	let injected_fields:Vec<Field> = vec![
 		syn::parse_quote!(pub properties:window_relative_system::WindowRelativeProfileProperties),
 		syn::parse_quote!(pub task_system:window_relative_system::TaskSystem),
 		syn::parse_quote!(pub services:window_relative_system::WindowRelativeProfileServiceSet<Self>)
 	];
 
-	// ---- Insert into the struct ----
+	// Insert extra fields into the struct.
 	if let syn::Fields::Named(FieldsNamed { ref mut named, .. }) = ast.fields {
 		for f in injected_fields {
 			named.push(f);
 		}
 	} else {
-		return syn::Error::new_spanned(&ast, "window_relative_profile only works on a struct with named fields").to_compile_error().into();
+		return syn::Error::new_spanned(&ast, "window_relative_profile macro only works on a struct with named fields").to_compile_error().into();
 	}
 
-	// ---- Implement the trait ----
+	// Implement traits for struct.
 	let trait_impl:proc_macro2::TokenStream = quote! {
 		use window_relative_system::{ WindowRelativeProfileHandlerList as _ };
 		impl window_relative_system::WindowRelativeProfileCore for #struct_name {
@@ -58,7 +58,8 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 		}
 	};
 
-	// Implement Default.
+	// Implement Default implementation.
+	println!("{}\t{:?}", struct_name, arg_names);
 	let new_impl:proc_macro2::TokenStream = match arg_names.as_slice() {
 		[id, title, process_name] => quote! {
 			impl Default for #struct_name {
@@ -74,7 +75,7 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 		_ => quote! { }
 	};
 
-	// ---- Output modified struct + trait impl ----
+	// Combine and return created tokens.
 	TokenStream::from(quote! {
 		#ast
 		#trait_impl
