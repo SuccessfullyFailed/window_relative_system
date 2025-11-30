@@ -28,5 +28,3 @@ impl TestCore {
 	const TITLE:&str = "TEST_PROFILE_TITLE";
 	const PROCESS_NAME:&str = "TEST_PROFILE_PROCESS_NAME";
 }
-#[cfg(test)]
-impl WindowRelativeProfile for TestCore {}

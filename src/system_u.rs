@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ TestCore, WindowRelativeProfile, WindowRelativeProfileProperties, WindowRelativeProfileServiceSet, WindowRelativeSystem };
+	use crate::{ TestCore, WindowRelativeProfileProperties, WindowRelativeProfileServiceSet, WindowRelativeSystem };
 	use std::{ sync::Mutex, thread::sleep, time::Duration };
 	use task_syncer::TaskSystem;
 
@@ -78,7 +78,6 @@ mod tests {
 		use crate as window_relative_system;
 		#[window_relative_profile_creator_macro::window_relative_profile]
 		struct TestCoreB {}
-		impl WindowRelativeProfile for TestCoreB {}
 
 		static VALIDATOR_A:Mutex<bool> = Mutex::new(false);
 		static VALIDATOR_B:Mutex<bool> = Mutex::new(false);

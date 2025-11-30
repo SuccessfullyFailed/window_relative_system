@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ TestCore, WindowRelativeProfile, WindowRelativeProfileCore, WindowRelativeProfileProperties, WindowRelativeProfileServiceSet };
+	use crate::{ TestCore, WindowRelativeProfile, WindowRelativeProfileProperties, WindowRelativeProfileServiceSet };
 	use window_controller::WindowController;
 	use task_syncer::{Task, TaskSystem};
 	use std::sync::Mutex;
@@ -31,12 +31,6 @@ mod tests {
 		use crate as window_relative_system;
 		#[window_relative_profile_creator_macro::window_relative_profile]
 		struct TestCoreB {}
-		impl WindowRelativeProfile for TestCoreB {
-			fn on_open(&mut self) -> Result<(), Box<dyn std::error::Error>> { HISTORY.lock().unwrap().push("open".to_string()); Ok(()) }
-			fn on_activate(&mut self) -> Result<(), Box<dyn std::error::Error>> { HISTORY.lock().unwrap().push("activate".to_string()); Ok(()) }
-			fn on_deactivate(&mut self) -> Result<(), Box<dyn std::error::Error>> { HISTORY.lock().unwrap().push("deactivate".to_string()); Ok(()) }
-			fn on_close(&mut self) -> Result<(), Box<dyn std::error::Error>> { HISTORY.lock().unwrap().push("close".to_string()); Ok(()) }
-		}
 		let mut profile:TestCoreB = TestCoreB {
 			properties: WindowRelativeProfileProperties::new("test_id", "test_title", "test_process_name.exe")
 					.with_is_default()
@@ -46,6 +40,12 @@ mod tests {
 			handlers: Vec::new()
 		};
 		profile.task_system.add_task(Task::new("test_task", |_, _| { HISTORY.lock().unwrap().push("handled task".to_string()); Ok(()) }));
+		profile.add_handler(|_profile, _window, event_name| {
+			if ["open", "activate", "deactivate", "close"].contains(&event_name) {
+				HISTORY.lock().unwrap().push(event_name.to_string());
+			}
+			Ok(())
+		});
 		profile.add_handler(|profile, _window, event_name| {
 			if event_name == "trigger_handler" {
 				HISTORY.lock().unwrap().push(format!("handler on profile: {}", profile.properties.id()));

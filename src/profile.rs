@@ -6,7 +6,7 @@ use task_syncer::TaskSystem;
 
 
 
-pub trait WindowRelativeProfileCore:Send + Sync + 'static {
+pub trait WindowRelativeProfile:Send + Sync + 'static {
 	fn properties(&self) -> &WindowRelativeProfileProperties;
 	fn properties_mut(&mut self) -> &mut WindowRelativeProfileProperties;
 	fn task_system(&mut self) -> &TaskSystem;
@@ -43,40 +43,7 @@ pub trait WindowRelativeProfileCore:Send + Sync + 'static {
 	fn is_active(&self, window:&WindowController, active_process_name:&str, active_process_title:&str) -> bool {
 		(self.properties().active_checker)(self.properties(), window, active_process_name, active_process_title)
 	}
-}
-pub trait WindowRelativeProfile:WindowRelativeProfileCore {
 	
-	/* EVENT HANDLER METHODS */
-
-	/// A custom handler for when the window profile is opened.
-	fn on_open(&mut self) -> Result<(), Box<dyn Error>> {
-		Ok(())
-	}
-
-	/// A custom handler for when the window profile is activated.
-	fn on_activate(&mut self) -> Result<(), Box<dyn Error>> {
-		Ok(())
-	}
-
-	fn on_deactivate(&mut self) -> Result<(), Box<dyn Error>> {
-		Ok(())
-	}
-
-	/// A custom handler for when the window profile is closed.
-	fn on_close(&mut self) -> Result<(), Box<dyn Error>> {
-		Ok(())
-	}
-
-	/// Gets ran with the event name whenever an event is triggered.
-	fn on_event(&mut self, _event_name:&str) -> Result<(), Box<dyn Error>> {
-		Ok(())
-	}
-
-	/// Gets ran whenever the profile is updated once.
-	fn on_update(&mut self) -> Result<(), Box<dyn Error>> {
-		Ok(())
-	}
-
 
 
 	/* EVENT HANDLER METHODS */
@@ -93,7 +60,6 @@ pub trait WindowRelativeProfile:WindowRelativeProfileCore {
 		match event_name {
 			"open" => {
 				self.properties_mut().is_opened = true;
-				self.on_open()?;
 			},
 			"activate" => {
 				if !self.properties().is_opened {
@@ -102,20 +68,16 @@ pub trait WindowRelativeProfile:WindowRelativeProfileCore {
 				self.properties_mut().is_active = true;
 				self.task_system_mut().resume();
 				self.task_system_mut().run_once(&Instant::now());
-				self.on_activate()?;
 			},
 			"update" => {
 				self.task_system_mut().run_once(&Instant::now());
-				self.on_update()?;
 			},
 			"deactivate" => {
 				self.properties_mut().is_active = false;
 				self.task_system_mut().pause();
-				self.on_deactivate()?;
 			},
 			"close" => {
 				self.properties_mut().is_opened = false;
-				self.on_close()?;
 			},
 			_ => {}
 		};
@@ -249,7 +211,6 @@ impl WindowRelativeProfileProperties {
 use crate as window_relative_system;
 #[window_relative_profile]
 pub(crate) struct WindowRelativeDefaultProfile {}
-impl WindowRelativeProfile for WindowRelativeDefaultProfile {}
 impl Default for WindowRelativeDefaultProfile {
 	fn default() -> Self {
 		WindowRelativeDefaultProfile {

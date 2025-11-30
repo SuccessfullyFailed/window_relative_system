@@ -37,7 +37,7 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 	// Implement traits for struct.
 	let trait_impl:proc_macro2::TokenStream = quote! {
 		use window_relative_system::{ WindowRelativeProfileSized as _ };
-		impl window_relative_system::WindowRelativeProfileCore for #struct_name {
+		impl window_relative_system::WindowRelativeProfile for #struct_name {
 			#[inline]
 			fn properties(&self) -> &window_relative_system::WindowRelativeProfileProperties { &self.properties }
 			#[inline]
