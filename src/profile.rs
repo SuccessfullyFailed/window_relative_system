@@ -1,6 +1,6 @@
-use crate::{ WindowRelativeProfileService, WindowRelativeProfileServiceSet };
+use crate::{ WindowRelativeProfileHandler, WindowRelativeProfileHandlerSet, WindowRelativeProfileService, WindowRelativeProfileServiceSet };
 use window_relative_profile_creator_macro::window_relative_profile;
-use std::{ any::Any, error::Error, sync::Arc, time::Instant };
+use std::{ any::Any, error::Error, time::Instant };
 use window_controller::WindowController;
 use task_syncer::TaskSystem;
 
@@ -101,10 +101,10 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 
 
 
-pub type WindowRelativeProfileHandler<T> = Arc<dyn Fn(&mut T, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync>;
+//pub type WindowRelativeProfileHandler<T> = Arc<dyn Fn(&mut T, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync>;
 pub trait WindowRelativeProfileSized:WindowRelativeProfile + Sized {
-	fn handlers(&self) -> &Vec<WindowRelativeProfileHandler<Self>>;
-	fn handlers_mut(&mut self) -> &mut Vec<WindowRelativeProfileHandler<Self>>;
+	fn handlers(&self) -> &WindowRelativeProfileHandlerSet<Self>;
+	fn handlers_mut(&mut self) -> &mut WindowRelativeProfileHandlerSet<Self>;
 
 
 
@@ -123,7 +123,7 @@ pub trait WindowRelativeProfileSized:WindowRelativeProfile + Sized {
 	}
 	
 	/// Return self with an added handler.
-	fn with_handler<T:Fn(&mut Self, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync + 'static>(mut self, handler:T) -> Self {
+	fn with_handler<T:WindowRelativeProfileHandler<Self> + 'static>(mut self, handler:T) -> Self {
 		self.add_handler(handler);
 		self
 	}
@@ -134,8 +134,8 @@ pub trait WindowRelativeProfileSized:WindowRelativeProfile + Sized {
 	}
 
 	/// Add a handler to the list.
-	fn add_handler<T:Fn(&mut Self, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync + 'static>(&mut self, handler:T) {
-		self.handlers_mut().push(Arc::new(handler));
+	fn add_handler<T:WindowRelativeProfileHandler<Self> + 'static>(&mut self, handler:T) {
+		self.handlers_mut().add_service(handler);
 	}
 }
 
@@ -217,7 +217,7 @@ impl Default for WindowRelativeDefaultProfile {
 			properties: WindowRelativeProfileProperties::new("DEFAULT_PROFILE_ID", "DEFAULT_PROFILE_TITLE", "DEFAULT_PROFILE_PROCESS_NAME").with_is_default(),
 			task_system: TaskSystem::new(),
 			services: WindowRelativeProfileServiceSet::new(),
-			handlers: Vec::new()
+			handlers: WindowRelativeProfileHandlerSet::new()
 		}
 	}
 }

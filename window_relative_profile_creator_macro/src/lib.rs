@@ -22,7 +22,7 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 		syn::parse_quote!(pub properties:window_relative_system::WindowRelativeProfileProperties),
 		syn::parse_quote!(pub task_system:window_relative_system::TaskSystem),
 		syn::parse_quote!(pub services:window_relative_system::WindowRelativeProfileServiceSet),
-		syn::parse_quote!(pub handlers:Vec<window_relative_system::WindowRelativeProfileHandler<Self>>)
+		syn::parse_quote!(pub handlers:window_relative_system::WindowRelativeProfileHandlerSet<Self>)
 	];
 
 	// Insert extra fields into the struct.
@@ -52,17 +52,17 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 			fn as_any_mut(&mut self) -> &mut dyn std::any::Any { self }
 			#[inline]
 			fn run_handlers(&mut self, window:&window_relative_system::WindowController, event_name:&str) -> Result<(), Box<dyn std::error::Error>> {
-				let handlers = self.handlers().clone();
+				let handlers = self.handlers().handlers_cloned();
 				let concrete_self:&mut #struct_name = self.as_any_mut().downcast_mut::<#struct_name>().expect("Type mismatch in run_handlers");
 				for handler in handlers {
-					handler(concrete_self, window, event_name)?;
+					handler.run(concrete_self, window, event_name)?;
 				}
 				Ok(())
 			}
 		}
 		impl window_relative_system::WindowRelativeProfileSized for #struct_name {
-			fn handlers(&self) -> &Vec<window_relative_system::WindowRelativeProfileHandler<Self>> { &self.handlers }
-			fn handlers_mut(&mut self) -> &mut Vec<window_relative_system::WindowRelativeProfileHandler<Self>> { &mut self.handlers }
+			fn handlers(&self) -> &window_relative_system::WindowRelativeProfileHandlerSet<Self> { &self.handlers }
+			fn handlers_mut(&mut self) -> &mut window_relative_system::WindowRelativeProfileHandlerSet<Self> { &mut self.handlers }
 		}
 	};
 
@@ -75,7 +75,7 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 						properties: window_relative_system::WindowRelativeProfileProperties::new(#id, #title, #process_name),
 						task_system: window_relative_system::TaskSystem::new(),
 						services: window_relative_system::WindowRelativeProfileServiceSet::new(),
-						handlers: Vec::new()
+						handlers: window_relative_system::WindowRelativeProfileHandlerSet::new()
 					}
 				}
 			}

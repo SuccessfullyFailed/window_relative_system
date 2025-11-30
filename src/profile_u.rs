@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ TestCore, WindowRelativeProfile, WindowRelativeProfileProperties, WindowRelativeProfileServiceSet };
+	use crate::{ TestCore, WindowRelativeProfile, WindowRelativeProfileProperties, WindowRelativeProfileHandlerSet, WindowRelativeProfileServiceSet };
 	use window_controller::WindowController;
 	use task_syncer::{Task, TaskSystem};
 	use std::sync::Mutex;
@@ -37,16 +37,16 @@ mod tests {
 					.with_active_checker(|_, _, process_name, _| process_name == "second_test_process_name.exe"),
 			task_system: TaskSystem::new(),
 			services: WindowRelativeProfileServiceSet::new(),
-			handlers: Vec::new()
+			handlers: WindowRelativeProfileHandlerSet::new()
 		};
 		profile.task_system.add_task(Task::new("test_task", |_, _| { HISTORY.lock().unwrap().push("handled task".to_string()); Ok(()) }));
-		profile.add_handler(|_profile, _window, event_name| {
+		profile.add_handler(|_profile:&mut TestCoreB, _window:&WindowController, event_name:&str| {
 			if ["open", "activate", "deactivate", "close"].contains(&event_name) {
 				HISTORY.lock().unwrap().push(event_name.to_string());
 			}
 			Ok(())
 		});
-		profile.add_handler(|profile, _window, event_name| {
+		profile.add_handler(|profile:&mut TestCoreB, _window:&WindowController, event_name:&str| {
 			if event_name == "trigger_handler" {
 				HISTORY.lock().unwrap().push(format!("handler on profile: {}", profile.properties.id()));
 			}

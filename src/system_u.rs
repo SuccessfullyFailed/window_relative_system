@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ TestCore, WindowRelativeProfileProperties, WindowRelativeProfileServiceSet, WindowRelativeSystem };
+	use crate::{ TestCore, WindowRelativeProfileProperties, WindowRelativeProfileHandlerSet, WindowRelativeProfileServiceSet, WindowRelativeSystem };
 	use std::{ sync::Mutex, thread::sleep, time::Duration };
 	use task_syncer::TaskSystem;
 
@@ -86,7 +86,7 @@ mod tests {
 			properties: WindowRelativeProfileProperties::new("test_2", "", ""),
 			task_system: TaskSystem::new(),
 			services: WindowRelativeProfileServiceSet::new(),
-			handlers: Vec::new()
+			handlers: WindowRelativeProfileHandlerSet::new()
 		});
 
 		WindowRelativeSystem::execute_on_all_profiles(|profile| {
