@@ -179,19 +179,6 @@ pub trait WindowRelativeProfileSized:WindowRelativeProfile + Sized {
 
 
 
-pub trait WindowRelativeProfileEvents {
-
-	/// Trigger an event in the profile.
-	fn trigger_event(&mut self, event_name:&str) -> Result<(), Box<dyn Error>> {
-		self.trigger_event_with_window(event_name, &WindowController::active())
-	}
-
-	/// Trigger an event in the profile using the given window.
-	fn trigger_event_with_window(&mut self, event_name:&str, window:&WindowController) -> Result<(), Box<dyn Error>>;
-}
-
-
-
 pub struct WindowRelativeProfileProperties {
 	id:String,
 	title:String,
