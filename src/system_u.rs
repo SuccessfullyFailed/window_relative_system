@@ -86,7 +86,8 @@ mod tests {
 		WindowRelativeSystem::add_profile(TestCoreB {
 			properties: WindowRelativeProfileProperties::new("test_2", "", ""),
 			task_system: TaskSystem::new(),
-			services: WindowRelativeProfileServiceSet::new()
+			services: WindowRelativeProfileServiceSet::new(),
+			handlers: Vec::new()
 		});
 
 		WindowRelativeSystem::execute_on_all_profiles(|profile| {

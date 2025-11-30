@@ -1,6 +1,6 @@
 use crate::{ WindowRelativeProfileService, WindowRelativeProfileServiceSet };
 use window_relative_profile_creator_macro::window_relative_profile;
-use std::{ any::Any, error::Error, time::Instant };
+use std::{ any::Any, error::Error, sync::Arc, time::Instant };
 use window_controller::WindowController;
 use task_syncer::TaskSystem;
 
@@ -13,6 +13,7 @@ pub trait WindowRelativeProfileCore:Send + Sync + 'static {
 	fn task_system_mut(&mut self) -> &mut TaskSystem;
 	fn services(&mut self) -> &mut WindowRelativeProfileServiceSet;
 	fn as_any_mut(&mut self) -> &mut dyn Any;
+	fn run_handlers(&mut self, _window:&WindowController, _event_name:&str) -> Result<(), Box<dyn Error>>;
 	
 
 
@@ -122,7 +123,8 @@ pub trait WindowRelativeProfile:WindowRelativeProfileCore {
 		// Handle event in task-system.
 		self.task_system_mut().trigger_event(event_name);
 
-		// Handle events in services.
+		// Handle events in services and handlers.
+		self.run_handlers(window, event_name)?;
 		self.services().run(window, event_name)?;
 
 		// 'close' event should trigger after 'deactivate' is fully handled.
@@ -137,7 +139,12 @@ pub trait WindowRelativeProfile:WindowRelativeProfileCore {
 
 
 
+pub type WindowRelativeProfileHandler<T> = Arc<dyn Fn(&mut T, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync>;
 pub trait WindowRelativeProfileSized:WindowRelativeProfile + Sized {
+	fn handlers(&self) -> &Vec<WindowRelativeProfileHandler<Self>>;
+	fn handlers_mut(&mut self) -> &mut Vec<WindowRelativeProfileHandler<Self>>;
+
+
 
 	/* MODIFICATION METHODS */
 	
@@ -153,12 +160,22 @@ pub trait WindowRelativeProfileSized:WindowRelativeProfile + Sized {
 		self
 	}
 	
+	/// Return self with an added handler.
+	fn with_handler<T:Fn(&mut Self, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync + 'static>(mut self, handler:T) -> Self {
+		self.add_handler(handler);
+		self
+	}
+	
 	/// Add a service to the list.
 	fn add_service<T:WindowRelativeProfileService + 'static>(&mut self, service:T) {
 		self.services().add_service(service);
 	}
+
+	/// Add a handler to the list.
+	fn add_handler<T:Fn(&mut Self, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync + 'static>(&mut self, handler:T) {
+		self.handlers_mut().push(Arc::new(handler));
+	}
 }
-impl<T:WindowRelativeProfile + Sized> WindowRelativeProfileSized for T {}
 
 
 
@@ -251,7 +268,8 @@ impl Default for WindowRelativeDefaultProfile {
 		WindowRelativeDefaultProfile {
 			properties: WindowRelativeProfileProperties::new("DEFAULT_PROFILE_ID", "DEFAULT_PROFILE_TITLE", "DEFAULT_PROFILE_PROCESS_NAME").with_is_default(),
 			task_system: TaskSystem::new(),
-			services: WindowRelativeProfileServiceSet::new()
+			services: WindowRelativeProfileServiceSet::new(),
+			handlers: Vec::new()
 		}
 	}
 }

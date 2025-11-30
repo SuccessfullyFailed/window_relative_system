@@ -42,9 +42,16 @@ mod tests {
 					.with_is_default()
 					.with_active_checker(|_, _, process_name, _| process_name == "second_test_process_name.exe"),
 			task_system: TaskSystem::new(),
-			services: WindowRelativeProfileServiceSet::new()
+			services: WindowRelativeProfileServiceSet::new(),
+			handlers: Vec::new()
 		};
 		profile.task_system.add_task(Task::new("test_task", |_, _| { HISTORY.lock().unwrap().push("handled task".to_string()); Ok(()) }));
+		profile.add_handler(|profile, _window, event_name| {
+			if event_name == "trigger_handler" {
+				HISTORY.lock().unwrap().push(format!("handler on profile: {}", profile.properties.id()));
+			}
+			Ok(())
+		});
 		
 		assert_eq!(profile.id(), "test_id");
 		assert_eq!(profile.title(), "test_title");
@@ -62,5 +69,8 @@ mod tests {
 		assert_eq!(HISTORY.lock().unwrap().remove(0), "close");
 		profile.trigger_event_with_window("open", &fake_window).unwrap();
 		assert_eq!(HISTORY.lock().unwrap().remove(0), "open");
+		profile.trigger_event_with_window("trigger_handler", &fake_window).unwrap();
+		assert_eq!(HISTORY.lock().unwrap().remove(0), "handler on profile: test_id");
+		assert!(HISTORY.lock().unwrap().is_empty());
 	}
 }
