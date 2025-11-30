@@ -1,6 +1,6 @@
+use syn::{ Expr, Field, FieldsNamed, Ident, ItemStruct, Lit, parse_macro_input, punctuated::Punctuated, Token, ExprLit };
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ Expr, Field, FieldsNamed, Ident, ItemStruct, Lit, parse_macro_input, punctuated::Punctuated, Token, ExprLit };
 
 
 
@@ -21,7 +21,7 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 	let injected_fields:Vec<Field> = vec![
 		syn::parse_quote!(pub properties:window_relative_system::WindowRelativeProfileProperties),
 		syn::parse_quote!(pub task_system:window_relative_system::TaskSystem),
-		syn::parse_quote!(pub services:window_relative_system::WindowRelativeProfileServiceSet<Self>)
+		syn::parse_quote!(pub services:window_relative_system::WindowRelativeProfileServiceSet)
 	];
 
 	// Insert extra fields into the struct.
@@ -46,22 +46,9 @@ pub fn window_relative_profile(attr:TokenStream, item:TokenStream) -> TokenStrea
 			#[inline]
 			fn task_system_mut(&mut self) -> &mut window_relative_system::TaskSystem { &mut self.task_system }
 			#[inline]
-			fn as_any_mut(&mut self) -> &mut dyn std::any::Any { self }
+			fn services(&mut self) -> &mut window_relative_system::WindowRelativeProfileServiceSet { &mut self.services }
 			#[inline]
-			fn trigger_service_event_handlers_with_window(&mut self, event_name:&str, window:&window_relative_system::WindowController) -> Result<(), Box<dyn std::error::Error>> {
-				let services = self.services().clone();
-				let concrete_self:&mut #struct_name = self.as_any_mut().downcast_mut::<#struct_name>().expect("Type mismatch in run_handlers");
-				let expired = services.run(concrete_self, window, event_name)?;
-				for index in expired.into_iter().rev() {
-					self.services.remove(index);
-				}
-				Ok(())
-			}
-		}
-		impl window_relative_system::WindowRelativeProfileSized for #struct_name {
-			fn services(&mut self) -> &mut window_relative_system::WindowRelativeProfileServiceSet<Self> {
-				&mut self.services
-			}
+			fn as_any_mut(&mut self) -> &mut dyn std::any::Any { self }
 		}
 	};
 

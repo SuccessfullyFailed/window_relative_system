@@ -1,20 +1,22 @@
 use window_controller::WindowController;
-use std::{ error::Error, sync::Arc };
+use std::error::Error;
 
 
 
-pub struct WindowRelativeProfileServiceSet<ProfileStruct>(Vec<Arc<dyn WindowRelativeProfileService<ProfileStruct> + Send + Sync>>);
-impl<ProfileStruct> WindowRelativeProfileServiceSet<ProfileStruct> {
+
+
+pub struct WindowRelativeProfileServiceSet(Vec<Box<dyn WindowRelativeProfileService>>);
+impl WindowRelativeProfileServiceSet {
 
 	/* CONSTRUCTOR METHODS */
 
 	/// Create a new set.
-	pub fn new() -> WindowRelativeProfileServiceSet<ProfileStruct> {
+	pub fn new() -> WindowRelativeProfileServiceSet {
 		WindowRelativeProfileServiceSet(Vec::new())
 	}
 
 	/// Return self with a new service.
-	pub fn with_service<Service:WindowRelativeProfileService<ProfileStruct> + 'static>(mut self, service:Service) -> Self {
+	pub fn with_service<Service:WindowRelativeProfileService + 'static>(mut self, service:Service) -> Self {
 		self.add_service(service);
 		self
 	}
@@ -24,8 +26,8 @@ impl<ProfileStruct> WindowRelativeProfileServiceSet<ProfileStruct> {
 	/* SERVICE MODIFICATION METHODS */
 	
 	/// Add a new service.
-	pub fn add_service<Service:WindowRelativeProfileService<ProfileStruct> + 'static>(&mut self, service:Service) {
-		self.0.push(Arc::new(service));
+	pub fn add_service<Service:WindowRelativeProfileService + 'static>(&mut self, service:Service) {
+		self.0.push(Box::new(service));
 	}
 
 	/// Remove a service.
@@ -42,29 +44,24 @@ impl<ProfileStruct> WindowRelativeProfileServiceSet<ProfileStruct> {
 
 	/* USAGE METHODS */
 
-	/// Run all services. Returns the indexes of the services that are expired.
-	pub fn run(&self, profile:&mut ProfileStruct, window:&WindowController, event_name:&str) -> Result<Vec<usize>, Box<dyn Error>> {
-		let mut expired:Vec<usize> = Vec::new();
-		for (index,service) in self.0.iter().enumerate() {
-			if service.trigger_on_event(event_name) {
-				service.run(profile, window, event_name)?;
-				if service.trigger_once() {
-					expired.push(index);
-				}
+	/// Run all services. Removes the services that are expired.
+	pub fn run(&mut self, window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
+		let mut index:usize = 0;
+		while index < self.0.len() {
+			self.0[index].run(window, event_name)?;
+			if self.0[index].trigger_once() {
+				self.0.remove(index);
+			} else {
+				index += 1;
 			}
 		}
-		Ok(expired)
-	}
-}
-impl<T> Clone for WindowRelativeProfileServiceSet<T> {
-	fn clone(&self) -> Self {
-		WindowRelativeProfileServiceSet(self.0.iter().map(|arc| arc.clone()).collect())
+		Ok(())
 	}
 }
 
 
 
-pub trait WindowRelativeProfileService<ProfileStruct>:Send + Sync {
+pub trait WindowRelativeProfileService:Send + Sync {
 
 	/// Whether or not the service should only trigger once.
 	fn trigger_once(&self) -> bool {
@@ -77,12 +74,12 @@ pub trait WindowRelativeProfileService<ProfileStruct>:Send + Sync {
 	}
 
 	/// Run the service. Requires 'when_to_trigger' to be implemented to execute.
-	fn run(&self, _profile:&mut ProfileStruct, _window:&WindowController, _event_name:&str) -> Result<(), Box<dyn Error>> {
+	fn run(&mut self, _window:&WindowController, _event_name:&str) -> Result<(), Box<dyn Error>> {
 		Ok(())
 	}
 }
-impl<ProfileStruct, T:Fn(&mut ProfileStruct, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync + 'static> WindowRelativeProfileService<ProfileStruct> for T {
-	fn run(&self, profile:&mut ProfileStruct, window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
-		self(profile, window, event_name)
+impl<T:Fn(&WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync + 'static> WindowRelativeProfileService for T {
+	fn run(&mut self, window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
+		self(window, event_name)
 	}
 }

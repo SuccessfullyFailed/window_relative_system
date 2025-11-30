@@ -1,3 +1,4 @@
+use crate::{ WindowRelativeProfileService, WindowRelativeProfileServiceSet };
 use window_relative_profile_creator_macro::window_relative_profile;
 use std::{ any::Any, error::Error, time::Instant };
 use window_controller::WindowController;
@@ -10,10 +11,8 @@ pub trait WindowRelativeProfileCore:Send + Sync + 'static {
 	fn properties_mut(&mut self) -> &mut WindowRelativeProfileProperties;
 	fn task_system(&mut self) -> &TaskSystem;
 	fn task_system_mut(&mut self) -> &mut TaskSystem;
+	fn services(&mut self) -> &mut WindowRelativeProfileServiceSet;
 	fn as_any_mut(&mut self) -> &mut dyn Any;
-
-	/// Trigger an event in the task-system using the given window.
-	fn trigger_service_event_handlers_with_window(&mut self, _event_name:&str, _window:&WindowController) -> Result<(), Box<dyn Error>>;
 	
 
 
@@ -88,18 +87,8 @@ pub trait WindowRelativeProfile:WindowRelativeProfileCore {
 
 	/// Trigger an event in the profile using the given window.
 	fn trigger_event_with_window(&mut self, event_name:&str, window:&WindowController) -> Result<(), Box<dyn Error>> {
-		self.trigger_manual_event_handlers_with_window(event_name, window)?;
-		self.trigger_service_event_handlers_with_window(event_name, window)?;
 
-		// 'close' event should trigger after 'deactivate' is fully handled.
-		if event_name == "deactivate" && !window.is_active() {
-			self.trigger_event_with_window("close", window)?;
-		}
-		Ok(())
-	}
-
-	/// Trigger an event in the task-system using the given window.
-	fn trigger_manual_event_handlers_with_window(&mut self, event_name:&str, window:&WindowController) -> Result<(), Box<dyn Error>> {
+		// Handle manual event handlers.
 		match event_name {
 			"open" => {
 				self.properties_mut().is_opened = true;
@@ -129,7 +118,19 @@ pub trait WindowRelativeProfile:WindowRelativeProfileCore {
 			},
 			_ => {}
 		};
+		
+		// Handle event in task-system.
 		self.task_system_mut().trigger_event(event_name);
+
+		// Handle events in services.
+		self.services().run(window, event_name)?;
+
+		// 'close' event should trigger after 'deactivate' is fully handled.
+		if event_name == "deactivate" && !window.is_active() {
+			self.trigger_event_with_window("close", window)?;
+		}
+
+		// Return success.
 		Ok(())
 	}
 }
@@ -137,11 +138,8 @@ pub trait WindowRelativeProfile:WindowRelativeProfileCore {
 
 
 pub trait WindowRelativeProfileSized:WindowRelativeProfile + Sized {
-	fn services(&mut self) -> &mut WindowRelativeProfileServiceSet<Self>;
 
-
-
-	/* BUILDER METHODS */
+	/* MODIFICATION METHODS */
 	
 	/// Return self with a new active checker.
 	fn with_active_checker<T:Fn(&WindowRelativeProfileProperties, &WindowController, &str, &str) -> bool + Send + Sync + 'static>(mut self, checker:T) -> Self {
@@ -149,21 +147,18 @@ pub trait WindowRelativeProfileSized:WindowRelativeProfile + Sized {
 		self
 	}
 
-
-
-	/* SERVICE METHODS */
-
-	/// Add a service to the list.
-	fn add_service<T:WindowRelativeProfileService<Self> + 'static>(&mut self, service:T) {
-		self.services().add_service(service);
-	}
-
 	/// Return self with an added service.
-	fn with_service<T:WindowRelativeProfileService<Self> + 'static>(mut self, service:T) -> Self {
+	fn with_service<T:WindowRelativeProfileService + 'static>(mut self, service:T) -> Self {
 		self.add_service(service);
 		self
 	}
+	
+	/// Add a service to the list.
+	fn add_service<T:WindowRelativeProfileService + 'static>(&mut self, service:T) {
+		self.services().add_service(service);
+	}
 }
+impl<T:WindowRelativeProfile + Sized> WindowRelativeProfileSized for T {}
 
 
 
@@ -247,7 +242,7 @@ impl WindowRelativeProfileProperties {
 
 
 
-use crate::{self as window_relative_system, WindowRelativeProfileService, WindowRelativeProfileServiceSet};
+use crate as window_relative_system;
 #[window_relative_profile]
 pub(crate) struct WindowRelativeDefaultProfile {}
 impl WindowRelativeProfile for WindowRelativeDefaultProfile {}

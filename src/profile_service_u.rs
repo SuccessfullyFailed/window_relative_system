@@ -12,11 +12,11 @@ mod tests {
 		static mut HISTORY:Vec<String> = Vec::new();
 
 		struct TestService {}
-		impl<T> WindowRelativeProfileService<T> for TestService {
+		impl WindowRelativeProfileService for TestService {
 			fn trigger_on_event(&self, event_name:&str) -> bool {
 				["open", "activate", "deactivate", "close", "update", "test_event"].contains(&event_name)
 			}
-			fn run(&self, _profile:&mut T, _window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
+			fn run(&mut self, _window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
 				unsafe { HISTORY.push(event_name.to_string()); }
 				Ok(())
 			}
@@ -46,11 +46,11 @@ mod tests {
 		static mut WAS_TRIGGERED:bool = false;
 
 		struct TestService {}
-		impl<T> WindowRelativeProfileService<T> for TestService {
+		impl WindowRelativeProfileService for TestService {
 			fn trigger_once(&self) -> bool {
 				true
 			}
-			fn run(&self, _profile:&mut T, _window:&WindowController, _event_name:&str) -> Result<(), Box<dyn Error>> {
+			fn run(&mut self, _window:&WindowController, _event_name:&str) -> Result<(), Box<dyn Error>> {
 				unsafe { WAS_TRIGGERED = true; }
 				Ok(())
 			}
@@ -70,7 +70,7 @@ mod tests {
 		static mut WAS_TRIGGERED:bool = false;
 
 		let mut profile:TestCore = TestCore::default();
-		profile.add_service(|_self:&mut TestCore, _window:&WindowController, _event:&str| {
+		profile.add_service(|_window:&WindowController, _event:&str| {
 			unsafe { WAS_TRIGGERED = true; }
 			Ok(())
 		});
