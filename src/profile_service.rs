@@ -31,6 +31,11 @@ impl WindowRelativeProfileServiceSet {
 	pub fn add_service<Service:WindowRelativeProfileService + 'static>(&mut self, service:Service) {
 		self.0.push(Box::new(service));
 	}
+	
+	/// Add a new service.
+	pub(crate) fn add_service_literal(&mut self, service:Box<dyn WindowRelativeProfileService>) {
+		self.0.push(service);
+	}
 
 	/// Remove a service.
 	pub fn remove(&mut self, index:usize) {

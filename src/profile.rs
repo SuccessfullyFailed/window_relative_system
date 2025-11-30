@@ -97,6 +97,15 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 		// Return success.
 		Ok(())
 	}
+	
+
+
+	/* MODIFICATION METHODS */
+	
+	/// Add a service to the list.
+	fn add_service_literal(&mut self, service:Box<dyn WindowRelativeProfileService>) {
+		self.services().add_service_literal(service);
+	}
 }
 
 
