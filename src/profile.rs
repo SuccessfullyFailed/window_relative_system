@@ -23,13 +23,16 @@ impl WindowRelativeProfile {
 
 	/// Create a new profile.
 	pub fn new(id:&str, title:&str, process_name:&str) -> WindowRelativeProfile {
+		let mut task_system:TaskSystem = TaskSystem::new();
+		task_system.pause(&Instant::now());
+		
 		WindowRelativeProfile {
 			id: id.to_string(),
 			title: title.to_string(),
 			process_name: process_name.to_string(),
 			is_default_profile: false,
 
-			task_system: TaskSystem::new(),
+			task_system,
 			active_checker: Arc::new(|profile, _active_window, active_process_name, _active_process_title| active_process_name == profile.process_name),
 			services: WindowRelativeProfileServiceSet::new(),
 			event_handlers: Vec::new(),
