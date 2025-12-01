@@ -1,76 +1,31 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ TestCore, WindowRelativeProfile, WindowRelativeProfileProperties, WindowRelativeProfileHandlerSet, WindowRelativeProfileServiceSet };
 	use window_controller::WindowController;
-	use task_syncer::{Task, TaskSystem};
+	use crate::WindowRelativeProfile;
 	use std::sync::Mutex;
 	
 
 
 	#[test]
-	fn test_profile_full_test() {
+	fn test_profile_event_triggers() {
 		static HISTORY:Mutex<Vec<String>> = Mutex::new(Vec::new());
 
+		let mut profile:WindowRelativeProfile = {
+			WindowRelativeProfile::new("test_id", "test_title", "test_process")
+				.with_service(|_window:&WindowController, event_name:&str| { HISTORY.lock().unwrap().push(format!("service {}", event_name)); Ok(()) })
+				.with_handler(|_profile:&mut WindowRelativeProfile, _window:&WindowController, event_name:&str| { HISTORY.lock().unwrap().push(format!("handler {}", event_name)); Ok(()) })
+		};
 		let fake_window:WindowController = WindowController::from_hwnd(std::ptr::null_mut());
 
-		let mut profile:TestCore = TestCore::default();
-		assert_eq!(profile.id(), TestCore::ID);
-		assert_eq!(profile.title(), TestCore::TITLE);
-		assert_eq!(profile.process_name(), TestCore::PROCESS_NAME);
-		assert_eq!(profile.is_default_profile(), false);
-		assert_eq!(profile.is_active(&fake_window, "active_process_name", "active_process_title"), false);
-		assert_eq!(profile.is_active(&fake_window, TestCore::PROCESS_NAME, "active_process_title"), true);
-		profile.trigger_event_with_window("activate", &fake_window).unwrap();
-		assert!(HISTORY.lock().unwrap().is_empty());
-		profile.trigger_event_with_window("deactivate", &fake_window).unwrap();
-		assert!(HISTORY.lock().unwrap().is_empty());
-		profile.trigger_event_with_window("open", &fake_window).unwrap();
-		assert!(HISTORY.lock().unwrap().is_empty());
-
-		// Create a new profile as the previous profile has already triggered the 'open' event on the first 'activation' event.
-		use crate as window_relative_system;
-		#[window_relative_profile_creator_macro::window_relative_profile]
-		struct TestCoreB {}
-		let mut profile:TestCoreB = TestCoreB {
-			properties: WindowRelativeProfileProperties::new("test_id", "test_title", "test_process_name.exe")
-					.with_is_default()
-					.with_active_checker(|_, _, process_name, _| process_name == "second_test_process_name.exe"),
-			task_system: TaskSystem::new(),
-			services: WindowRelativeProfileServiceSet::new(),
-			handlers: WindowRelativeProfileHandlerSet::new()
-		};
-		profile.task_system.add_task(Task::new("test_task", |_, _| { HISTORY.lock().unwrap().push("handled task".to_string()); Ok(()) }));
-		profile.add_handler(|_profile:&mut TestCoreB, _window:&WindowController, event_name:&str| {
-			if ["open", "activate", "deactivate", "close"].contains(&event_name) {
-				HISTORY.lock().unwrap().push(event_name.to_string());
-			}
-			Ok(())
-		});
-		profile.add_handler(|profile:&mut TestCoreB, _window:&WindowController, event_name:&str| {
-			if event_name == "trigger_handler" {
-				HISTORY.lock().unwrap().push(format!("handler on profile: {}", profile.properties.id()));
-			}
-			Ok(())
-		});
-		
-		assert_eq!(profile.id(), "test_id");
-		assert_eq!(profile.title(), "test_title");
-		assert_eq!(profile.process_name(), "test_process_name.exe");
-		assert_eq!(profile.is_default_profile(), true);
-		assert_eq!(profile.is_active(&fake_window, "active_process_name", "active_process_title"), false);
-		assert_eq!(profile.is_active(&fake_window, "test_process_name.exe", "active_process_title"), false);
-		assert_eq!(profile.is_active(&fake_window, "second_test_process_name.exe", "active_process_title"), true);
-		profile.trigger_event_with_window("activate", &fake_window).unwrap();
-		assert_eq!(HISTORY.lock().unwrap().remove(0), "open");
-		assert_eq!(HISTORY.lock().unwrap().remove(0), "handled task");
-		assert_eq!(HISTORY.lock().unwrap().remove(0), "activate");
-		profile.trigger_event_with_window("deactivate", &fake_window).unwrap();
-		assert_eq!(HISTORY.lock().unwrap().remove(0), "deactivate");
-		assert_eq!(HISTORY.lock().unwrap().remove(0), "close");
-		profile.trigger_event_with_window("open", &fake_window).unwrap();
-		assert_eq!(HISTORY.lock().unwrap().remove(0), "open");
-		profile.trigger_event_with_window("trigger_handler", &fake_window).unwrap();
-		assert_eq!(HISTORY.lock().unwrap().remove(0), "handler on profile: test_id");
-		assert!(HISTORY.lock().unwrap().is_empty());
+		profile.trigger_event(&fake_window, "activate").unwrap();
+		assert_eq!(HISTORY.lock().unwrap().drain(..).collect::<Vec<String>>(), ["service open", "handler open", "service activate", "handler activate"].map(|s| s.to_string()));
+		profile.trigger_event(&fake_window, "update").unwrap();
+		assert_eq!(HISTORY.lock().unwrap().drain(..).collect::<Vec<String>>(), ["service update", "handler update"].map(|s| s.to_string()));
+		profile.trigger_event(&WindowController::active(), "deactivate").unwrap();
+		assert_eq!(HISTORY.lock().unwrap().drain(..).collect::<Vec<String>>(), ["service deactivate", "handler deactivate"].map(|s| s.to_string()));
+		profile.trigger_event(&fake_window, "activate").unwrap();
+		assert_eq!(HISTORY.lock().unwrap().drain(..).collect::<Vec<String>>(), ["service activate", "handler activate"].map(|s| s.to_string()));
+		profile.trigger_event(&fake_window, "deactivate").unwrap();
+		assert_eq!(HISTORY.lock().unwrap().drain(..).collect::<Vec<String>>(), ["service deactivate", "handler deactivate", "service close", "handler close"].map(|s| s.to_string()));
 	}
 }

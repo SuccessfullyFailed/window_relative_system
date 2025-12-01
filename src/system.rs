@@ -1,7 +1,6 @@
 use std::{ thread::sleep, sync::{ Mutex, MutexGuard }, time::{ Duration, Instant } };
-use crate::{ WindowRelativeDefaultProfile, WindowRelativeProfile, window_hook };
+use crate::{ WindowRelativeProfile, window_hook };
 use window_controller::WindowController;
-use task_syncer::TaskSystem;
 
 
 
@@ -12,7 +11,7 @@ pub(crate) const DEFAULT_ERROR_HANDLER:&dyn Fn(&str, &str, &str) = &|profile_id,
 
 
 pub struct WindowRelativeSystem {
-	profiles:Vec<Box<dyn WindowRelativeProfile>>,
+	profiles:Vec<WindowRelativeProfile>,
 	active_profile_index:usize,
 	error_handler:Box<dyn Fn(&str, &str, &str) + Send>,
 	interval:Duration
@@ -48,7 +47,7 @@ impl WindowRelativeSystem {
 				let system:&mut WindowRelativeSystem = (*system_guard).as_mut().unwrap();
 
 				// Update system.
-				if let Err(error) = system.profiles[system.active_profile_index].trigger_event("update") {
+				if let Err(error) = system.profiles[system.active_profile_index].trigger_event(&WindowController::active(), "update") {
 					(system.error_handler)(system.profiles[system.active_profile_index].id(), "run", &error.to_string());
 				}
 
@@ -68,7 +67,7 @@ impl WindowRelativeSystem {
 	}
 
 	/// Add a profile to the system.
-	pub fn add_profile<T:WindowRelativeProfile + 'static>(profile:T) {
+	pub fn add_profile(profile:WindowRelativeProfile) {
 
 		// Get lock on system.
 		let mut system_guard:MutexGuard<'_, Option<WindowRelativeSystem>> = SYSTEM_INST.lock().unwrap();
@@ -78,7 +77,7 @@ impl WindowRelativeSystem {
 		let system:&mut WindowRelativeSystem = (*system_guard).as_mut().unwrap();
 
 		// Add profile.
-		system.profiles.push(Box::new(profile));
+		system.profiles.push(profile);
 	}
 
 	/// Update the current profile.
@@ -92,15 +91,12 @@ impl WindowRelativeSystem {
 
 			// Profile change.
 			if active_profile_index != system.active_profile_index {
-				if let Err(error) = system.profiles[system.active_profile_index].trigger_event_with_window("deactivate", &previous_window) {
+				if let Err(error) = system.profiles[system.active_profile_index].trigger_event(&previous_window, "deactivate") {
 					(system.error_handler)(system.profiles[system.active_profile_index].id(), "deactivate", &error.to_string());
 				}
 				system.active_profile_index = active_profile_index;
-				if let Err(error) = system.profiles[system.active_profile_index].trigger_event_with_window("activate", &current_window) {
+				if let Err(error) = system.profiles[system.active_profile_index].trigger_event(&current_window, "activate") {
 					(system.error_handler)(system.profiles[system.active_profile_index].id(), "activate", &error.to_string());
-					let task_system:&mut TaskSystem = system.profiles[system.active_profile_index].task_system_mut();
-					task_system.resume();
-					task_system.run_once(&Instant::now());
 				}
 			}
 		});
@@ -111,7 +107,7 @@ impl WindowRelativeSystem {
 	/* USAGE METHODS */
 
 	/// Execute an action on a locked system instance.
-	pub(crate) fn execute_on_system<T, U>(action:T) -> Option<U> where T:Fn(&mut WindowRelativeSystem) -> U {
+	pub(crate) fn execute_on_system<T:Fn(&mut WindowRelativeSystem) -> U, U>(action:T) -> Option<U> {
 
 		// Get lock on system.
 		let mut system_guard:MutexGuard<'_, Option<WindowRelativeSystem>> = SYSTEM_INST.lock().unwrap();
@@ -120,40 +116,23 @@ impl WindowRelativeSystem {
 		}
 		let system:&mut WindowRelativeSystem = (*system_guard).as_mut().unwrap();
 
-		// If no profiles exist, DefaultProfile hasn't initialized, abort further actions.
-		if system.profiles.is_empty() {
-			return None;
-		}
-
 		// Execute the action on the system.
 		Some(action(system))
 	}
 
-	/// Execute an action on a profile by type. Uses system error handler if profile cannot be found.
-	pub fn execute_on_profile<T, U, V:'static>(action:T) -> Option<U> where T:Fn(&mut V) -> U {
-		Self::execute_on_system(|system| {
-			for profile in &mut system.profiles {
-				if let Some(profile) = profile.as_any_mut().downcast_mut::<V>() {
-					return Some(action(profile));
-				}
-			}
-			None
-		}).flatten()
-	}
-
 	/// Execute an action on the current profile.
-	pub fn execute_on_current_profile<T, U>(action:T) -> Option<U> where T:Fn(&mut dyn WindowRelativeProfile) -> U {
+	pub fn execute_on_current_profile<T:Fn(&mut WindowRelativeProfile) -> U, U>(action:T) -> Option<U> {
 		Self::execute_on_system(|system| {
-			action(&mut *system.profiles[system.active_profile_index])
+			action(&mut system.profiles[system.active_profile_index])
 		})
 	}
 
 	/// Execute an action on a profile by id. Uses system error handler if profile cannot be found.
-	pub fn execute_on_profile_by_id<T, U>(profile_id:&str, action:T) -> Option<U> where T:Fn(&mut dyn WindowRelativeProfile) -> U {
+	pub fn execute_on_profile_by_id<T:Fn(&mut WindowRelativeProfile) -> U, U>(profile_id:&str, action:T) -> Option<U> {
 		Self::execute_on_system(|system| {
 			match system.profiles.iter_mut().find(|profile| profile.id() == profile_id) {
 				Some(profile) => {
-					Some(action(&mut **profile))
+					Some(action(profile))
 				},
 				None => {
 					(system.error_handler)(system.profiles[system.active_profile_index].id(), "action on profile by id", &format!("Could not find profile by id '{profile_id}'."));
@@ -164,17 +143,17 @@ impl WindowRelativeSystem {
 	}
 	
 	/// Execute an action on all profiles. Includes the DefaultProfile.
-	pub fn execute_on_all_profiles<T, U>(action:T) -> Vec<U> where T:Fn(&mut dyn WindowRelativeProfile) -> U {
-		Self::execute_on_system(|system| {
-			(0..system.profiles.len()).map(|profile_index| action(&mut *system.profiles[profile_index])).collect()
-		}).unwrap_or_default()
+	pub fn execute_on_all_profiles<T:Fn(&mut WindowRelativeProfile) -> U, U>(action:T) -> Vec<U> {
+		Self::execute_on_system(|system|
+			(0..system.profiles.len()).map(|profile_index| action(&mut system.profiles[profile_index])).collect()
+		).unwrap_or_default()
 	}
 }
 impl Default for WindowRelativeSystem {
 	fn default() -> Self {
 		WindowRelativeSystem {
 			profiles: vec![
-				Box::new(WindowRelativeDefaultProfile::default())
+				WindowRelativeProfile::default_profile()
 			],
 			active_profile_index: 0,
 			error_handler: Box::new(|profile, event_name, error| DEFAULT_ERROR_HANDLER(profile, event_name, error)),
