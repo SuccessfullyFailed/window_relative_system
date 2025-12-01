@@ -49,9 +49,13 @@ impl WindowRelativeProfileServiceSet {
 	pub fn run(&mut self, task_scheduler:&TaskScheduler, window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
 		let mut index:usize = 0;
 		while index < self.0.len() {
-			self.0[index].run(task_scheduler, window, event_name)?;
-			if self.0[index].trigger_once() {
-				self.0.remove(index);
+			if self.0[index].trigger_on_event(event_name) {
+				self.0[index].run(task_scheduler, window, event_name)?;
+				if self.0[index].trigger_once() {
+					self.0.remove(index);
+				} else {
+					index += 1;
+				}
 			} else {
 				index += 1;
 			}

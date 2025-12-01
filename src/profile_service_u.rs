@@ -2,7 +2,7 @@
 mod tests {
 	use crate::{ WindowRelativeProfile, WindowRelativeProfileService };
 	use task_syncer::TaskScheduler;
-use window_controller::WindowController;
+	use window_controller::WindowController;
 	use std::{ error::Error, ptr };
 
 
@@ -31,6 +31,7 @@ use window_controller::WindowController;
 		
 		// Run services and test results.
 		const EXPECTED_ON_EVENT:&[(&str, &[&str])] = &[
+			("fake_event", &[]),
 			("activate", &["open", "activate"]),
 			("activate", &["activate"]),
 			("update", &["update"]),
