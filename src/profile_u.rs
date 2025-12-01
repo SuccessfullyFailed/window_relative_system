@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
-	use window_controller::WindowController;
+	use task_syncer::TaskScheduler;
+use window_controller::WindowController;
 	use crate::WindowRelativeProfile;
 	use std::sync::Mutex;
 	
@@ -12,7 +13,7 @@ mod tests {
 
 		let mut profile:WindowRelativeProfile = {
 			WindowRelativeProfile::new("test_id", "test_title", "test_process")
-				.with_service(|_window:&WindowController, event_name:&str| { HISTORY.lock().unwrap().push(format!("service {}", event_name)); Ok(()) })
+				.with_service(|_scheduler:&TaskScheduler, _window:&WindowController, event_name:&str| { HISTORY.lock().unwrap().push(format!("service {}", event_name)); Ok(()) })
 				.with_handler(|_profile:&mut WindowRelativeProfile, _window:&WindowController, event_name:&str| { HISTORY.lock().unwrap().push(format!("handler {}", event_name)); Ok(()) })
 		};
 		let fake_window:WindowController = WindowController::from_hwnd(std::ptr::null_mut());

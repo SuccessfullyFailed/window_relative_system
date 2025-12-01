@@ -160,7 +160,7 @@ impl WindowRelativeProfile {
 		}
 
 		// Run services and handlers.
-		self.services.run(window, event_name)?;
+		self.services.run(self.task_system.task_scheduler(), window, event_name)?;
 		for handler in self.event_handlers.clone() {
 			handler(self, window, event_name)?;
 		}

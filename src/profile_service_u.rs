@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests {
 	use crate::{ WindowRelativeProfile, WindowRelativeProfileService };
-	use window_controller::WindowController;
+	use task_syncer::TaskScheduler;
+use window_controller::WindowController;
 	use std::{ error::Error, ptr };
 
 
@@ -17,7 +18,7 @@ mod tests {
 			fn trigger_on_event(&self, event_name:&str) -> bool {
 				["open", "activate", "deactivate", "close", "update", "test_event"].contains(&event_name)
 			}
-			fn run(&mut self, _window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
+			fn run(&mut self, _scheduler:&TaskScheduler, _window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
 				unsafe { HISTORY.push(event_name.to_string()); }
 				Ok(())
 			}
@@ -54,7 +55,7 @@ mod tests {
 			fn trigger_once(&self) -> bool {
 				true
 			}
-			fn run(&mut self, _window:&WindowController, _event_name:&str) -> Result<(), Box<dyn Error>> {
+			fn run(&mut self, _scheduler:&TaskScheduler, _window:&WindowController, _event_name:&str) -> Result<(), Box<dyn Error>> {
 				unsafe { WAS_TRIGGERED = true; }
 				Ok(())
 			}
@@ -78,7 +79,7 @@ mod tests {
 		// Create profile and get fake window.
 		let mut profile:WindowRelativeProfile = WindowRelativeProfile::new("test_id", "test_title", "test_process_name");
 		static mut WAS_TRIGGERED:bool = false;
-		profile.add_service(|_window:&WindowController, _event:&str| {
+		profile.add_service(|_scheduler:&TaskScheduler, _window:&WindowController, _event:&str| {
 			unsafe { WAS_TRIGGERED = true; }
 			Ok(())
 		});

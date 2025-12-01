@@ -1,3 +1,4 @@
+use task_syncer::TaskScheduler;
 use window_controller::WindowController;
 use std::error::Error;
 
@@ -45,10 +46,10 @@ impl WindowRelativeProfileServiceSet {
 	/* USAGE METHODS */
 
 	/// Run all services. Removes the services that are expired.
-	pub fn run(&mut self, window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
+	pub fn run(&mut self, task_scheduler:&TaskScheduler, window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
 		let mut index:usize = 0;
 		while index < self.0.len() {
-			self.0[index].run(window, event_name)?;
+			self.0[index].run(task_scheduler, window, event_name)?;
 			if self.0[index].trigger_once() {
 				self.0.remove(index);
 			} else {
@@ -74,12 +75,12 @@ pub trait WindowRelativeProfileService:Send + Sync {
 	}
 
 	/// Run the service. Requires 'when_to_trigger' to be implemented to execute.
-	fn run(&mut self, _window:&WindowController, _event_name:&str) -> Result<(), Box<dyn Error>> {
+	fn run(&mut self, _task_scheduler:&TaskScheduler, _window:&WindowController, _event_name:&str) -> Result<(), Box<dyn Error>> {
 		Ok(())
 	}
 }
-impl<T:Fn(&WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync + 'static> WindowRelativeProfileService for T {
-	fn run(&mut self, window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
-		self(window, event_name)
+impl<T:Fn(&TaskScheduler, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync + 'static> WindowRelativeProfileService for T {
+	fn run(&mut self, task_scheduler:&TaskScheduler, window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
+		self(task_scheduler, window, event_name)
 	}
 }
