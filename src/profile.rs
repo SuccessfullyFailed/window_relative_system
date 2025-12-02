@@ -1,6 +1,6 @@
 use std::{ error::Error, sync::Arc, time::Instant };
 use window_controller::WindowController;
-use crate::{WindowRelativeProfileService, WindowRelativeProfileServiceSet};
+use crate::{WindowRelativeProfileData, WindowRelativeProfileDataConvertible, WindowRelativeProfileService, WindowRelativeProfileServiceSet};
 use task_syncer::TaskSystem;
 
 
@@ -15,6 +15,7 @@ pub struct WindowRelativeProfile {
 	active_checker:Arc<dyn Fn(&WindowRelativeProfile, &WindowController, &str, &str) -> bool + Send + Sync>,
 	services:WindowRelativeProfileServiceSet,
 	event_handlers:Vec<Arc<dyn Fn(&mut WindowRelativeProfile, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync>>,
+	data:WindowRelativeProfileData,
 	
 	is_opened:bool,
 	is_active:bool
@@ -36,6 +37,7 @@ impl WindowRelativeProfile {
 			active_checker: Arc::new(|profile, _active_window, active_process_name, _active_process_title| active_process_name == profile.process_name),
 			services: WindowRelativeProfileServiceSet::new(),
 			event_handlers: Vec::new(),
+			data: WindowRelativeProfileData::new(),
 
 			is_opened: false,
 			is_active: false
@@ -85,6 +87,16 @@ impl WindowRelativeProfile {
 	/// Add a new handler to the profile.
 	pub fn add_handler<Handler:Fn(&mut WindowRelativeProfile, &WindowController, &str) -> Result<(), Box<dyn Error>> + Send + Sync + 'static>(&mut self, handler:Handler) {
 		self.event_handlers.push(Arc::new(handler));
+	}
+
+	/// Get some data from the profile.
+	pub fn get_data<T:WindowRelativeProfileDataConvertible>(&self, name:&str) -> Option<T> {
+		self.data.get(name)
+	}
+
+	/// Set some data from the profile.
+	pub fn set_data<T:WindowRelativeProfileDataConvertible>(&mut self, name:&str, value:T) {
+		self.data.set(name, value)
 	}
 
 	/// Get a handle to the services list.
