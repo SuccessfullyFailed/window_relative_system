@@ -56,6 +56,19 @@ impl WindowRelativeProfile {
 
 	/* PROPERTY SETTER METHODS */
 
+	/// Return self with the given modification applied.
+	pub fn with_modifications<Modification:Fn(WindowRelativeProfile) -> WindowRelativeProfile>(mut self, modifications:Vec<Modification>) -> Self {
+		for modification in modifications {
+			self = self.with_modification(modification);
+		}
+		self
+	}
+
+	/// Return self with the given modification applied.
+	pub fn with_modification<Modification:Fn(WindowRelativeProfile) -> WindowRelativeProfile>(self, modification:Modification) -> Self {
+		modification(self)
+	}
+
 	/// Return self with a new active checker.
 	pub fn with_active_checker<ActiveChecker:Fn(&WindowRelativeProfile, &WindowController, &str, &str) -> bool + Send + Sync + 'static>(mut self, active_checker:ActiveChecker) -> Self {
 		self.set_active_checker(active_checker);
