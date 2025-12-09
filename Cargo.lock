@@ -5,7 +5,7 @@ version = 4
 [[package]]
 name = "task_syncer"
 version = "0.1.4"
-source = "git+https://github.com/SuccessfullyFailed/task_syncer#437e03e897ea55bd72695be0edadda041c346221"
+source = "git+https://github.com/SuccessfullyFailed/task_syncer#3a50b93e0b9afd7c8e16c7a3951116b3b4e5ae6f"
 
 [[package]]
 name = "winapi"
