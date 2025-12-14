@@ -7,6 +7,7 @@ use window_controller::WindowController;
 static SYSTEM_INST:Mutex<Option<WindowRelativeSystem>> = Mutex::new(None);
 static RUN_LOCK:Mutex<bool> = Mutex::new(false);
 pub(crate) const DEFAULT_ERROR_HANDLER:&dyn Fn(&str, &str, &str) = &|profile_id, event_name, error| eprintln!("Profile {profile_id} panicked in {event_name} event: {error}");
+const MIN_INTERVAL:Duration = Duration::from_millis(1);
 
 
 
@@ -38,31 +39,23 @@ impl WindowRelativeSystem {
 
 		// Repeat indefinitely.
 		loop {
-			let mut sleep_time:Option<Duration> = None;
-			{
-				let loop_start:Instant = Instant::now();
+			let loop_start:Instant = Instant::now();
 
-				// Get system lock.
-				let mut system_guard:MutexGuard<'_, Option<WindowRelativeSystem>> = SYSTEM_INST.lock().unwrap();
-				let system:&mut WindowRelativeSystem = (*system_guard).as_mut().unwrap();
+			// Get system lock.
+			let mut system_guard:MutexGuard<'_, Option<WindowRelativeSystem>> = SYSTEM_INST.lock().unwrap();
+			let system:&mut WindowRelativeSystem = (*system_guard).as_mut().unwrap();
 
-				// Update system.
-				if let Err(error) = system.profiles[system.active_profile_index].trigger_event(&WindowController::active(), "update") {
-					(system.error_handler)(system.profiles[system.active_profile_index].id(), "run", &error.to_string());
-				}
-
-				// Wait until loop end target instant.
-				let loop_end:Instant = loop_start + system.interval;
-				let now:Instant = Instant::now();
-				if now < loop_end {
-					sleep_time = Some(loop_end - now);
-				}
+			// Update system.
+			if let Err(error) = system.profiles[system.active_profile_index].trigger_event(&WindowController::active(), "update") {
+				(system.error_handler)(system.profiles[system.active_profile_index].id(), "run", &error.to_string());
 			}
 
-			// Sleep designated sleep-time.
-			if let Some(sleep_time) = sleep_time {
-				sleep(sleep_time);
-			}
+			// Wait until loop end target instant.
+			let loop_end:Instant = loop_start + system.interval;
+			let now:Instant = Instant::now();
+			let sleep_time:Duration = if now < loop_end { loop_end - now } else { MIN_INTERVAL };
+			drop(system_guard);
+			sleep(sleep_time);
 		}
 	}
 
