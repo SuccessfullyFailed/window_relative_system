@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ WindowRelativeProfile, WindowRelativeProfileService };
+	use crate::{ TriggerOverride, WindowRelativeProfile, WindowRelativeProfileService };
 	use task_syncer::TaskScheduler;
 	use window_controller::WindowController;
 	use std::{ error::Error, ptr };
@@ -89,5 +89,34 @@ mod tests {
 		// Run services and test results.
 		profile.trigger_event(&fake_window, "").unwrap();
 		assert!(unsafe { WAS_TRIGGERED });
+	}
+
+	#[test]
+	#[allow(static_mut_refs)]
+	fn test_profile_service_trigger_override() {
+
+		// Create test service.
+		static mut HISTORY:Vec<String> = Vec::new();
+		struct TestService {}
+		impl WindowRelativeProfileService for TestService {
+			fn trigger_on_event(&self, event_name:&str) -> bool {
+				["open", "activate", "deactivate", "close", "update", "test_event", "real_event"].contains(&event_name)
+			}
+			fn run(&mut self, _scheduler:&TaskScheduler, _window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
+				unsafe { HISTORY.push(event_name.to_string()); }
+				Ok(())
+			}
+		}
+
+		// Create profile and get fake window.
+		let mut profile:WindowRelativeProfile = WindowRelativeProfile::new("test_id", "test_title", "test_process_name");
+		profile.add_service(TriggerOverride::new(TestService {}, &[("fake_event", "real_event")]));
+		let fake_window:WindowController = WindowController::from_hwnd(ptr::null_mut());
+		
+		// Run services and test results.
+		for event_name in ["fake_event", "activate", "activate", "update", "deactivate"] {
+			profile.trigger_event(&fake_window, event_name).unwrap();
+		}
+		assert_eq!(unsafe { HISTORY.clone() }, vec!["real_event".to_string()]);
 	}
 }
