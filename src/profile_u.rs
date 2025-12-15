@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
-	use task_syncer::TaskScheduler;
-use window_controller::WindowController;
+	use window_controller::WindowController;
 	use crate::WindowRelativeProfile;
+	use task_syncer::TaskScheduler;
 	use std::sync::Mutex;
 	
 
@@ -28,5 +28,9 @@ use window_controller::WindowController;
 		assert_eq!(HISTORY.lock().unwrap().drain(..).collect::<Vec<String>>(), ["service activate", "handler activate"].map(|s| s.to_string()));
 		profile.trigger_event(&fake_window, "deactivate").unwrap();
 		assert_eq!(HISTORY.lock().unwrap().drain(..).collect::<Vec<String>>(), ["service deactivate", "handler deactivate", "service close", "handler close"].map(|s| s.to_string()));
+
+		profile.task_system().task_scheduler().trigger_event("nested_event");
+		profile.trigger_event(&fake_window, "update").unwrap();
+		assert_eq!(HISTORY.lock().unwrap().drain(..).collect::<Vec<String>>(), ["service nested_event", "handler nested_event", "service update", "handler update"]);
 	}
 }
