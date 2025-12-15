@@ -18,8 +18,7 @@ pub struct WindowRelativeProfile {
 	data:WindowRelativeProfileData,
 	
 	is_opened:bool,
-	is_active:bool,
-	is_recursing_scheduler_events:bool
+	is_active:bool
 }
 impl WindowRelativeProfile {
 
@@ -41,8 +40,7 @@ impl WindowRelativeProfile {
 			data: WindowRelativeProfileData::new(),
 
 			is_opened: false,
-			is_active: false,
-			is_recursing_scheduler_events: false
+			is_active: false
 		}
 	}
 
@@ -169,15 +167,8 @@ impl WindowRelativeProfile {
 	pub fn trigger_event(&mut self,  window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
 
 		// Handle pending task-system events profile-wide.
-		if !self.is_recursing_scheduler_events {
-			let task_system_events:Vec<String> = self.task_system.task_scheduler().pending_event_names();
-			if !task_system_events.is_empty() {
-				self.is_recursing_scheduler_events = true;
-				for scheduler_event_name in task_system_events {
-					self.trigger_event(window, &scheduler_event_name)?;
-				}
-				self.is_recursing_scheduler_events = false;
-			}
+		for scheduler_event_name in self.task_system.task_scheduler().drain_named_events() {
+			self.trigger_event(window, &scheduler_event_name)?;
 		}
 
 		// Handle built-in event handlers for active profile.
