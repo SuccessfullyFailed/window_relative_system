@@ -8,7 +8,7 @@ mod tests {
 	fn test_hook_installation() {
 
 		// Simply test if the hook can be installed without panicing.
-		window_hook::install(true);
-		sleep(Duration::from_millis(500));
+		window_hook::launch_hook_if_not_exist();
+		sleep(Duration::from_millis(50));
 	}
 }

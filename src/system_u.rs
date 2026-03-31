@@ -1,94 +1,72 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ WindowRelativeProfile, WindowRelativeSystem };
-	use std::{ sync::Mutex, thread::sleep, time::Duration };
+	use std::thread;
+
+use crate::{ WindowRelativeProfileCore, WindowRelativeSystem };
 
 	
 
-	static TEST_PROFILE_ADDED:Mutex<bool> = Mutex::new(false);
+	const DEFAULT_PROFILE_NAME:&str = "default_test_profile_name";
+	const DEFAULT_PROFILE_PROCESS_NAME:&str = "default_test_profile_process_name";
+	const SECONDARY_PROFILE_NAME:&str = "secondary_profile_name";
+	const SECONDARY_PROFILE_PROCESS_NAME:&str = "secondary_process_name";
+	fn test_system() -> WindowRelativeSystem {
+		WindowRelativeSystem::new(WindowRelativeProfileCore::new(DEFAULT_PROFILE_NAME, DEFAULT_PROFILE_PROCESS_NAME))
+			.with_profile(WindowRelativeProfileCore::new(SECONDARY_PROFILE_NAME, SECONDARY_PROFILE_PROCESS_NAME))
+	}
 
 
 
-	/* ADDING A PROFILE */
+	/* EXECUTION METHODS TESTS */
 
 	#[test]
-	fn test_system_add_profile() {
-		WindowRelativeSystem::add_profile(WindowRelativeProfile::new("test_id", "test_title", "test_process_name"));
-		WindowRelativeSystem::execute_on_all_profiles(|profile| {
-			if profile.id() == "test_id" {
-				*TEST_PROFILE_ADDED.lock().unwrap() = true;
-			}
-		});
-		assert!(*TEST_PROFILE_ADDED.lock().unwrap());
+	fn test_system_execute_on_all() {
+		let profile_names:Vec<String> = {
+			test_system().execute_on_all_profiles(|profile| {
+				profile.name().to_string()
+			})
+		};
+		assert_eq!(profile_names, vec![DEFAULT_PROFILE_NAME.to_string(), SECONDARY_PROFILE_NAME.to_string()]);
 	}
-
-	/// Wait until the test profile is added.
-	fn await_test_profile() {
-		const INTERVAL:Duration = Duration::from_millis(1);
-		const TRY_ADD_PROFILE_INDEX:usize = 1000;
-		const MAX_ATTEMPTS:usize = 2000;
-
-		let mut index:usize = 0;
-		while !*TEST_PROFILE_ADDED.lock().unwrap() {
-			sleep(INTERVAL);
-			index += 1;
-			if index == TRY_ADD_PROFILE_INDEX {
-				test_system_add_profile();
-			}
-			if index == MAX_ATTEMPTS {
-				panic!("Test profile was not added within reasonable timeframe.");
-			}
-		}
-	}
-
-
-	/* EXECUTE ON PROFILE TESTS */
 
 	#[test]
 	fn test_system_execute_on_current_profile() {
-		static VALIDATOR:Mutex<bool> = Mutex::new(false);
-		await_test_profile();
-
-		WindowRelativeSystem::execute_on_current_profile(|profile| {
-			if profile.is_default_profile() {
-				*VALIDATOR.lock().unwrap() = true;
-			}
-		});
-
-		assert!(*VALIDATOR.lock().unwrap());
+		let current_profile_name:String = {
+			test_system().execute_on_current_profile(|profile| {
+				profile.name().to_string()
+			})
+		};
+		assert_eq!(current_profile_name, DEFAULT_PROFILE_NAME);
 	}
 
 	#[test]
 	fn test_system_execute_on_profile_by_id() {
-		static VALIDATOR:Mutex<bool> = Mutex::new(false);
-		await_test_profile();
-
-		WindowRelativeSystem::execute_on_profile_by_id("test_id", |profile| {
-			if profile.id() == "test_id" {
-				*VALIDATOR.lock().unwrap() = true;
-			}
-		});
-
-		assert!(*VALIDATOR.lock().unwrap());
+		let profile_name:Option<String> = {
+			test_system().execute_on_profile_with_name(SECONDARY_PROFILE_NAME, |profile| {
+				profile.name().to_string()
+			})
+		};
+		assert_eq!(profile_name, Some(SECONDARY_PROFILE_NAME.to_string()));
 	}
 
 	#[test]
-	fn test_system_execute_on_all_profiles() {
-		static VALIDATOR_A:Mutex<bool> = Mutex::new(false);
-		static VALIDATOR_B:Mutex<bool> = Mutex::new(false);
-		await_test_profile();
-		WindowRelativeSystem::add_profile(WindowRelativeProfile::new("test_id_2", "test_title_2", "test_process_name_2"));
+	fn test_system_on_default_profile() {
+		assert!(
+			test_system().execute_on_default_profile(|profile| {
+				profile.name() == DEFAULT_PROFILE_NAME && profile.process_name() == DEFAULT_PROFILE_PROCESS_NAME
+			})
+		);
+	}
 
-		WindowRelativeSystem::execute_on_all_profiles(|profile| {
-			if profile.id() == "test_id" {
-				*VALIDATOR_A.lock().unwrap() = true;
-			}
-			if profile.id() == "test_id_2" {
-				*VALIDATOR_B.lock().unwrap() = true;
-			}
+
+
+	/* MISCELLANEOUS TESTS */
+
+	#[test]
+	fn test_system_can_be_sent_between_threads() {
+		let mut system:WindowRelativeSystem = test_system();
+		thread::spawn(move || {
+			system.execute_on_default_profile(|_| {});
 		});
-
-		assert!(*VALIDATOR_A.lock().unwrap());
-		assert!(*VALIDATOR_B.lock().unwrap());
 	}
 }

@@ -1,30 +1,35 @@
 use winapi::um::winuser::{DispatchMessageW, GetMessageW, SetWinEventHook, TranslateMessage, EVENT_SYSTEM_FOREGROUND, MSG, WINEVENT_OUTOFCONTEXT};
 use winapi::shared::{ minwindef::DWORD, ntdef::LONG, windef::{ HWINEVENTHOOK, HWINEVENTHOOK__, HWND } };
-use window_controller::WindowController;
 use std::{ mem, ptr::null_mut, sync::{ Mutex, MutexGuard }, thread };
+use window_controller::WindowController;
+use std::sync::{ Arc, Condvar };
+use std::thread::JoinHandle;
 
-use crate::WindowRelativeSystem;
 
 
-
-static HOOK_INSTALLED:Mutex<bool> = Mutex::new(false);
+static HOOK_HANDLE:Mutex<Option<JoinHandle<()>>> = Mutex::new(None);
 static mut PREVIOUS_WINDOW:Option<WindowController> = None;
+static SIGNAL_TRIGGER:Mutex<Option<Arc<(Mutex<(Option<u64>, u64)>, Condvar)>>> = Mutex::new(None);
 
 
 
-/// Install the window hook.
-pub fn install(create_thread:bool) {
-	if create_thread {
-		thread::spawn(|| install(false));
+/// Create a signal trigger.
+pub(crate) fn signal_trigger() -> Arc<(Mutex<(Option<u64>, u64)>, Condvar)> {
+	let mut trigger_handle:MutexGuard<'_, Option<Arc<(Mutex<(Option<u64>, u64)>, Condvar)>>> = SIGNAL_TRIGGER.lock().unwrap();
+	if let Some(trigger) = &*trigger_handle {
+		Arc::clone(trigger)
 	} else {
-		unsafe {
-		
-			// Validate no existing hook.
-			let mut hook_installed:MutexGuard<'_, bool> = HOOK_INSTALLED.lock().unwrap();
-			if *hook_installed {
-				eprintln!("Hook already in place.");
-				return;
-			}
+		let trigger:Arc<(Mutex<(Option<u64>, u64)>, Condvar)> = Arc::new((Mutex::new((None, 0)), Condvar::new()));
+		*trigger_handle = Some(Arc::clone(&trigger));
+		trigger
+	}
+}
+
+/// Create a window-hook event callback.
+pub(crate) fn launch_hook_if_not_exist() {
+	let mut hook_handle:MutexGuard<'_, Option<JoinHandle<()>>> = HOOK_HANDLE.lock().unwrap();
+	if hook_handle.is_none() {
+		*hook_handle = Some(thread::spawn(move || unsafe {
 
 			// Create and validate hook.
 			let hook:*mut HWINEVENTHOOK__ = SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, null_mut(), Some(win_event_proc), 0, 0, WINEVENT_OUTOFCONTEXT);
@@ -32,12 +37,10 @@ pub fn install(create_thread:bool) {
 				eprintln!("Failed to set event hook.");
 				return;
 			}
-			*hook_installed = true;
 
 			// Figure out initial profile.
-			let window_controller:WindowController = WindowController::active();
-			WindowRelativeSystem::update_profile(window_controller.clone(), window_controller.clone());
-			PREVIOUS_WINDOW = Some(window_controller);
+			let current_window:WindowController = WindowController::active();
+			PREVIOUS_WINDOW = Some(current_window);
 
 			// Keep listening for messages on hook.
 			let mut msg:MSG = mem::zeroed();
@@ -45,9 +48,11 @@ pub fn install(create_thread:bool) {
 				TranslateMessage(&msg);
 				DispatchMessageW(&msg);
 			}
-		}
+		}));
 	}
 }
+
+
 
 /// Handle a windows hook event to process changes in active window.
 #[allow(static_mut_refs)]
@@ -59,19 +64,22 @@ unsafe extern "system" fn win_event_proc(_event_hook:HWINEVENTHOOK, event:DWORD,
 		if event == EVENT_SYSTEM_FOREGROUND {
 
 			// Ignore event if the user is alt-tabbing.
-			let window_controller:WindowController = WindowController::from_hwnd(hwnd);
-			let process_name:String = window_controller.process_name().unwrap_or_default();
+			let current_window:WindowController = WindowController::from_hwnd(hwnd);
+			let process_name:String = current_window.process_name().unwrap_or_default();
 			if process_name == ALTTAB_PROCESS_NAME {
-				let class:String = window_controller.class();
+				let class:String = current_window.class();
 				if ALTTAB_CLASS_NAMES.contains(&class.as_str()) {
 					return;
 				}
 			}
 
 			// Update profile in window-relative system.
-			let previous_window:WindowController = PREVIOUS_WINDOW.as_ref().unwrap().clone();
-			WindowRelativeSystem::update_profile(previous_window, window_controller.clone());
-			PREVIOUS_WINDOW = Some(window_controller);
+			let hwnd_pointers:(Option<u64>, u64) = (PREVIOUS_WINDOW.as_ref().map(|controller| controller.hwnd() as u64), current_window.hwnd() as u64);
+			thread::spawn(move || {
+				*signal_trigger().0.lock().unwrap() = hwnd_pointers;
+				signal_trigger().1.notify_all();
+			});
+			PREVIOUS_WINDOW = Some(current_window);
 		}
 	}
 }

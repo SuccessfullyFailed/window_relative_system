@@ -3,9 +3,22 @@
 version = 4
 
 [[package]]
+name = "circular_buffer"
+version = "0.1.1"
+source = "git+https://github.com/SuccessfullyFailed/circular_buffer#983ecda11e88d3c4567a2816532a4e0094621076"
+
+[[package]]
+name = "file_ref"
+version = "0.1.2"
+source = "git+https://github.com/SuccessfullyFailed/file_ref#50018a1d2e4fd200681440718af652027ad50bc5"
+
+[[package]]
 name = "task_syncer"
 version = "0.1.5"
-source = "git+https://github.com/SuccessfullyFailed/task_syncer#b119559f2f13e7eba51ed3437b994e4dc48b417f"
+source = "git+https://github.com/SuccessfullyFailed/task_syncer#3666f9d9491a5479cd63d21ecc2fa3401d451e1b"
+dependencies = [
+ "file_ref",
+]
 
 [[package]]
 name = "winapi"
@@ -32,15 +45,16 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 [[package]]
 name = "window_controller"
 version = "0.1.1"
-source = "git+https://github.com/SuccessfullyFailed/window_controller#21d915a55afe6d489d5b8b4d196de881dab9518e"
+source = "git+https://github.com/SuccessfullyFailed/window_controller#5c9d03f3bcdc2d6550ede38efd62806690ad9d96"
 dependencies = [
  "winapi",
 ]
 
 [[package]]
 name = "window_relative_system"
-version = "0.4.1"
+version = "2.0.0"
 dependencies = [
+ "circular_buffer",
  "task_syncer",
  "winapi",
  "window_controller",
