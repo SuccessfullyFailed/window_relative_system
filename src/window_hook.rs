@@ -1,28 +1,22 @@
 use winapi::um::winuser::{DispatchMessageW, GetMessageW, SetWinEventHook, TranslateMessage, EVENT_SYSTEM_FOREGROUND, MSG, WINEVENT_OUTOFCONTEXT};
 use winapi::shared::{ minwindef::DWORD, ntdef::LONG, windef::{ HWINEVENTHOOK, HWINEVENTHOOK__, HWND } };
 use std::{ mem, ptr::null_mut, sync::{ Mutex, MutexGuard }, thread };
+use crate::WindowRelativeSystemRemoteControl;
 use window_controller::WindowController;
-use std::sync::{ Arc, Condvar };
 use std::thread::JoinHandle;
 
 
 
 static HOOK_HANDLE:Mutex<Option<JoinHandle<()>>> = Mutex::new(None);
 static mut PREVIOUS_WINDOW:Option<WindowController> = None;
-static SIGNAL_TRIGGER:Mutex<Option<Arc<(Mutex<(Option<u64>, u64)>, Condvar)>>> = Mutex::new(None);
+static REMOTE_CONTROLS:Mutex<Vec<WindowRelativeSystemRemoteControl>> = Mutex::new(Vec::new());
 
 
 
 /// Create a signal trigger.
-pub(crate) fn signal_trigger() -> Arc<(Mutex<(Option<u64>, u64)>, Condvar)> {
-	let mut trigger_handle:MutexGuard<'_, Option<Arc<(Mutex<(Option<u64>, u64)>, Condvar)>>> = SIGNAL_TRIGGER.lock().unwrap();
-	if let Some(trigger) = &*trigger_handle {
-		Arc::clone(trigger)
-	} else {
-		let trigger:Arc<(Mutex<(Option<u64>, u64)>, Condvar)> = Arc::new((Mutex::new((None, 0)), Condvar::new()));
-		*trigger_handle = Some(Arc::clone(&trigger));
-		trigger
-	}
+pub(crate) fn register_remote(remote:WindowRelativeSystemRemoteControl) {
+	REMOTE_CONTROLS.lock().unwrap().push(remote);
+	launch_hook_if_not_exist();
 }
 
 /// Create a window-hook event callback.
@@ -74,11 +68,9 @@ unsafe extern "system" fn win_event_proc(_event_hook:HWINEVENTHOOK, event:DWORD,
 			}
 
 			// Update profile in window-relative system.
-			let hwnd_pointers:(Option<u64>, u64) = (PREVIOUS_WINDOW.as_ref().map(|controller| controller.hwnd() as u64), current_window.hwnd() as u64);
-			thread::spawn(move || {
-				*signal_trigger().0.lock().unwrap() = hwnd_pointers;
-				signal_trigger().1.notify_all();
-			});
+			for remote_control in &*REMOTE_CONTROLS.lock().unwrap() {
+				remote_control.handle_window_change(&PREVIOUS_WINDOW, &current_window);
+			}
 			PREVIOUS_WINDOW = Some(current_window);
 		}
 	}

@@ -42,7 +42,7 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 	}
 
 	/// Get the task scheduler of this profile.
-	fn task_scheduler(&self) -> &TaskScheduler {
+	fn task_scheduler(&self) -> TaskScheduler {
 		self.task_system().scheduler()
 	}
 
@@ -51,13 +51,18 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 	/* HANDLER METHODS */
 
 	/// Executes when the profile is initially opened.
-	fn on_open(&mut self) {}
+	fn on_open(&mut self) -> Result<(), Box<dyn Error>> { Ok(()) }
 
 	/// Executes when the profile is activated.
-	fn on_activate(&mut self) {}
+	fn on_activate(&mut self) -> Result<(), Box<dyn Error>> { Ok(()) }
 
 	/// Executes when the profile is deactivated.
-	fn on_deactivate(&mut self) {}
+	fn on_deactivate(&mut self) -> Result<(), Box<dyn Error>> { Ok(()) }
+
+	/// Execute a named event.
+	fn execute_event(&mut self, window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
+		self.on_event(window, event_name)
+	}
 
 	/// Executes when any named event is triggered.
 	/// Includes the 'open', 'activate' and 'deactivate' events.

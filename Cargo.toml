@@ -4,7 +4,8 @@ version="2.0.0"
 edition="2024"
 
 [dependencies]
-window_controller={ version="0.1.1", git="https://github.com/SuccessfullyFailed/window_controller" }
-task_syncer={ version="0.1.5", git="https://github.com/SuccessfullyFailed/task_syncer" }
-circular_buffer={ git="https://github.com/SuccessfullyFailed/circular_buffer" }
+modifications_queue={ git="https://github.com/SuccessfullyFailed/modifications_queue", version="0.1.1" }
+window_controller={ git="https://github.com/SuccessfullyFailed/window_controller", version="0.1.1" }
+circular_buffer={ git="https://github.com/SuccessfullyFailed/circular_buffer", version="0.1.1" }
+task_syncer={ git="https://github.com/SuccessfullyFailed/task_syncer", version="0.1.6"}
 winapi={ version="0.3", features=["winuser"] }

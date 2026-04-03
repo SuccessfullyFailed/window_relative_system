@@ -69,4 +69,9 @@ use crate::{ WindowRelativeProfileCore, WindowRelativeSystem };
 			system.execute_on_default_profile(|_| {});
 		});
 	}
+
+	#[test]
+	fn test_system_can_be_modified_while_running() {
+		
+	}
 }
