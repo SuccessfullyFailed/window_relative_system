@@ -10,15 +10,59 @@ source = "git+https://github.com/SuccessfullyFailed/circular_buffer#983ecda11e88
 [[package]]
 name = "modifications_queue"
 version = "0.1.1"
-source = "git+https://github.com/SuccessfullyFailed/modifications_queue#1c64b67d7e1e7cf0a495cb752eb5006c969724ca"
+source = "git+https://github.com/SuccessfullyFailed/modifications_queue#e729315a01796ba5ce0ff7981388080d90530b98"
+
+[[package]]
+name = "proc-macro2"
+version = "1.0.106"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934"
+dependencies = [
+ "unicode-ident",
+]
+
+[[package]]
+name = "profile_creation_macro"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "quote"
+version = "1.0.45"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41f2619966050689382d2b44f664f4bc593e129785a36d6ee376ddf37259b924"
+dependencies = [
+ "proc-macro2",
+]
+
+[[package]]
+name = "syn"
+version = "2.0.117"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e665b8803e7b1d2a727f4023456bbbbe74da67099c585258af0ad9c5013b9b99"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
 
 [[package]]
 name = "task_syncer"
 version = "0.1.6"
-source = "git+https://github.com/SuccessfullyFailed/task_syncer#13ed97bc637f3f6ffc436bff61990eb108c882c8"
+source = "git+https://github.com/SuccessfullyFailed/task_syncer#2019ba599541e57196f8f3f404a1343ba3fdb6a0"
 dependencies = [
  "modifications_queue",
 ]
+
+[[package]]
+name = "unicode-ident"
+version = "1.0.24"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
 
 [[package]]
 name = "winapi"
@@ -56,6 +100,7 @@ version = "2.0.0"
 dependencies = [
  "circular_buffer",
  "modifications_queue",
+ "profile_creation_macro",
  "task_syncer",
  "winapi",
  "window_controller",

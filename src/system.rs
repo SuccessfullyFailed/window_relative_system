@@ -1,7 +1,7 @@
 use modifications_queue::{ModificationsQueue, ModificationsQueueRemote};
 use crate::{ ProfileStatus, WindowRelativeProfile, window_hook };
+use std::{ error::Error, sync::Arc };
 use window_controller::WindowController;
-use std::{ sync::Arc, error::Error };
 
 
 
@@ -112,7 +112,7 @@ impl WindowRelativeSystem {
 			if let Err(error) = previous_profile.on_event(previous_window, "deactivate") {
 				error_handler(previous_profile.name(), error);
 			}
-			previous_profile.task_system_mut().stop();
+			//previous_profile.task_system_mut().stop();
 			*previous_profile.status_mut() = ProfileStatus::Deactivated;
 		}
 
@@ -137,7 +137,7 @@ impl WindowRelativeSystem {
 		if let Err(error) = new_profile.on_event(current_window, "activate") {
 			error_handler(new_profile.name(), error);
 		}
-		new_profile.task_system_mut().start();
+		//new_profile.task_system_mut().start();
 	}
 
 	/// Get a mutable window-relative profile with the given index.

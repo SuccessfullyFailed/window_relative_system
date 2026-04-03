@@ -6,12 +6,14 @@ use std::error::Error;
 
 #[derive(PartialEq)]
 pub enum ProfileStatus { Uninitialized, Deactivated, Active }
+impl Default for ProfileStatus {
+	fn default() -> Self {
+		ProfileStatus::Uninitialized
+	}
+}
 
 
-
-pub trait WindowRelativeProfile:Send + Sync + 'static {
-
-	/* METHODS TO IMPLEMENT */
+pub trait WindowRelativeProfileEssentials:Send + Sync + 'static {
 
 	/// Get the name of the profile.
 	fn name(&self) -> &str;
@@ -30,8 +32,8 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 
 	/// Get a mutable reference to the status of the profile.
 	fn status_mut(&mut self) -> &mut ProfileStatus;
-
-
+}
+pub trait WindowRelativeProfile:WindowRelativeProfileEssentials {
 
 	/* PROPERTY GETTER METHODS */
 
@@ -70,39 +72,4 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 	fn on_event(&mut self, window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
 		Ok(())
 	}
-}
-
-
-
-pub struct WindowRelativeProfileCore {
-	name:String,
-	process_name:String,
-	status:ProfileStatus,
-	task_system:TaskSystem
-}
-impl WindowRelativeProfileCore {
-	pub fn new(name:&str, process_name:&str) -> WindowRelativeProfileCore {
-		WindowRelativeProfileCore {
-			name: name.to_string(),
-			process_name: process_name.to_string(),
-			status: ProfileStatus::Deactivated,
-			task_system: TaskSystem::new()
-		}
-	}
-}
-pub trait HasWindowRelativeProfileCore {
-	fn window_relative_profile_core(&self) -> &WindowRelativeProfileCore;
-	fn window_relative_profile_core_mut(&mut self) -> &mut WindowRelativeProfileCore;
-}
-impl<T:HasWindowRelativeProfileCore + Send + Sync + 'static> WindowRelativeProfile for T {
-	fn name(&self) -> &str { &self.window_relative_profile_core().name }
-	fn process_name(&self) -> &str { &self.window_relative_profile_core().process_name }
-	fn status(&self) -> &ProfileStatus { &self.window_relative_profile_core().status }
-	fn status_mut(&mut self) -> &mut ProfileStatus { &mut self.window_relative_profile_core_mut().status }
-	fn task_system(&self) -> &TaskSystem { &self.window_relative_profile_core().task_system }
-	fn task_system_mut(&mut self) -> &mut TaskSystem { &mut self.window_relative_profile_core_mut().task_system }
-}
-impl HasWindowRelativeProfileCore for WindowRelativeProfileCore {
-	fn window_relative_profile_core(&self) -> &WindowRelativeProfileCore { self }
-	fn window_relative_profile_core_mut(&mut self) -> &mut WindowRelativeProfileCore { self }
 }

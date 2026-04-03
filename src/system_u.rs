@@ -1,10 +1,36 @@
 #[cfg(test)]
 mod tests {
-	use std::thread;
-
-use crate::{ WindowRelativeProfileCore, WindowRelativeSystem };
-
+	use crate::{ ProfileStatus, TaskSystem, WindowRelativeProfile, WindowRelativeProfileEssentials, WindowRelativeSystem, WindowRelativeSystemRemoteControl };
+	use std::{ sync::Mutex, thread::{ self, sleep }, time::Duration };
 	
+
+	struct WindowRelativeProfileCore {
+		name:&'static str,
+		process_name:&'static str,
+		task_system:TaskSystem,
+		status:ProfileStatus
+	}
+	impl WindowRelativeProfileEssentials for WindowRelativeProfileCore {
+		fn name(&self) -> &str { self.name }
+		fn process_name(&self) -> &str { self.process_name}
+		fn task_system(&self) -> &TaskSystem { &self.task_system }
+		fn task_system_mut(&mut self) -> &mut TaskSystem { &mut self.task_system }
+		fn status(&self) -> &ProfileStatus { &self.status }
+		fn status_mut(&mut self) -> &mut ProfileStatus { &mut self.status }
+	}
+	impl WindowRelativeProfile for WindowRelativeProfileCore {}
+	impl WindowRelativeProfileCore {
+		fn new(name:&'static str, process_name:&'static str) -> WindowRelativeProfileCore {
+			WindowRelativeProfileCore {
+				name,
+				process_name,
+				task_system: TaskSystem::new(),
+				status: ProfileStatus::default()
+			}
+		}
+	}
+
+
 
 	const DEFAULT_PROFILE_NAME:&str = "default_test_profile_name";
 	const DEFAULT_PROFILE_PROCESS_NAME:&str = "default_test_profile_process_name";
@@ -71,7 +97,19 @@ use crate::{ WindowRelativeProfileCore, WindowRelativeSystem };
 	}
 
 	#[test]
-	fn test_system_can_be_modified_while_running() {
-		
+	fn test_system_can_be_used_while_running() {
+		static PROFILE_NAME:Mutex<String> = Mutex::new(String::new());
+		let mut system:WindowRelativeSystem = test_system();
+		let remote:WindowRelativeSystemRemoteControl = system.create_remote();
+		thread::spawn(move || {
+			sleep(Duration::from_millis(10));
+			remote.execute_on_default_profile(|profile| *PROFILE_NAME.lock().unwrap() = profile.name().to_string());
+			sleep(Duration::from_millis(1));
+			assert_eq!(*PROFILE_NAME.lock().unwrap(), DEFAULT_PROFILE_NAME);
+		});
+		thread::spawn(move || {
+			system.run();
+		});
+		sleep(Duration::from_millis(500));
 	}
 }
