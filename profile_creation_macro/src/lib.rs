@@ -1,4 +1,5 @@
 use syn::{ Data, DeriveInput, Field, Fields, Ident, parse_macro_input, token, punctuated::Punctuated };
+use proc_macro_crate::{ FoundCrate, crate_name };
 use quote::quote;
 
 
@@ -15,6 +16,12 @@ pub fn derive_profile(input:proc_macro::TokenStream) -> proc_macro::TokenStream 
 /// Implement the window-relative essential definitions for the given derive input.
 fn impl_profile(input:&DeriveInput) -> proc_macro::TokenStream {
 	let name:&Ident = &input.ident;
+	let crate_ident:Ident = {
+		match crate_name("window_relative_system") {
+			Ok(FoundCrate::Itself) => Ident::new("crate", proc_macro2::Span::call_site()),
+			_ => Ident::new("window_relative_system", proc_macro2::Span::call_site())
+		}
+	};
 
 	// Get the named fields of the derived struct.
 	let fields:&Punctuated<Field, token::Comma> = {
@@ -40,13 +47,13 @@ fn impl_profile(input:&DeriveInput) -> proc_macro::TokenStream {
 	
 	// Create and return implementation.
 	let expanded:proc_macro2::TokenStream = quote! {
-		impl WindowRelativeProfileEssentials for #name {
+		impl #crate_ident::WindowRelativeProfileEssentials for #name {
 			fn name(&self) -> &str { &self.name }
 			fn process_name(&self) -> &str { &self.process_name }
-			fn task_system(&self) -> &TaskSystem { &self.task_system }
-			fn task_system_mut(&mut self) -> &mut TaskSystem { &mut self.task_system }
-			fn status(&self) -> &ProfileStatus { &self.status }
-			fn status_mut(&mut self) -> &mut ProfileStatus { &mut self.status }
+			fn task_system(&self) -> &#crate_ident::TaskSystem { &self.task_system }
+			fn task_system_mut(&mut self) -> &mut #crate_ident::TaskSystem { &mut self.task_system }
+			fn status(&self) -> &#crate_ident::ProfileStatus { &self.status }
+			fn status_mut(&mut self) -> &mut #crate_ident::ProfileStatus { &mut self.status }
 		}
 	};
 	expanded.into()
