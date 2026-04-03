@@ -201,6 +201,7 @@ impl WindowRelativeSystem {
 
 
 
+#[derive(Clone)]
 pub struct WindowRelativeSystemRemoteControl(ModificationsQueueRemote<WindowRelativeSystem>);
 impl WindowRelativeSystemRemoteControl {
 
