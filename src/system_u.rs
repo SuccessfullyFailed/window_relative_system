@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ ProfileStatus, TaskSystem, WindowRelativeProfile, WindowRelativeProfileEssentials, WindowRelativeSystem, WindowRelativeSystemRemoteControl };
+	use crate::{ WindowRelativeProfileStatus, TaskSystem, WindowRelativeProfile, WindowRelativeProfileEssentials, WindowRelativeSystem, WindowRelativeSystemRemoteControl };
 	use std::{ sync::Mutex, thread::{ self, sleep }, time::Duration };
 	
 
@@ -8,15 +8,15 @@ mod tests {
 		name:&'static str,
 		process_name:&'static str,
 		task_system:TaskSystem,
-		status:ProfileStatus
+		status:WindowRelativeProfileStatus
 	}
 	impl WindowRelativeProfileEssentials for WindowRelativeProfileCore {
 		fn name(&self) -> &str { self.name }
 		fn process_name(&self) -> &str { self.process_name}
 		fn task_system(&self) -> &TaskSystem { &self.task_system }
 		fn task_system_mut(&mut self) -> &mut TaskSystem { &mut self.task_system }
-		fn status(&self) -> &ProfileStatus { &self.status }
-		fn status_mut(&mut self) -> &mut ProfileStatus { &mut self.status }
+		fn status(&self) -> &WindowRelativeProfileStatus { &self.status }
+		fn status_mut(&mut self) -> &mut WindowRelativeProfileStatus { &mut self.status }
 	}
 	impl WindowRelativeProfile for WindowRelativeProfileCore {}
 	impl WindowRelativeProfileCore {
@@ -25,7 +25,7 @@ mod tests {
 				name,
 				process_name,
 				task_system: TaskSystem::new(),
-				status: ProfileStatus::default()
+				status: WindowRelativeProfileStatus::default()
 			}
 		}
 	}

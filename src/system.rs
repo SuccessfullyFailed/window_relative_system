@@ -1,5 +1,5 @@
 use modifications_queue::{ModificationsQueue, ModificationsQueueRemote};
-use crate::{ ProfileStatus, WindowRelativeProfile, window_hook };
+use crate::{ WindowRelativeProfileStatus, WindowRelativeProfile, window_hook };
 use std::{ error::Error, sync::Arc };
 use window_controller::WindowController;
 
@@ -113,7 +113,7 @@ impl WindowRelativeSystem {
 				error_handler(previous_profile.name(), error);
 			}
 			//previous_profile.task_system_mut().stop();
-			*previous_profile.status_mut() = ProfileStatus::Deactivated;
+			*previous_profile.status_mut() = WindowRelativeProfileStatus::Deactivated;
 		}
 
 		// Handle switch to new profile.
@@ -122,7 +122,7 @@ impl WindowRelativeSystem {
 		// Handle new profile activation.
 		// This code is a bit messy, but makes sure the events and errors are handled when they occur.
 		let new_profile:&mut dyn WindowRelativeProfile = self.profile_with_index_mut(self.active_profile_index);
-		if new_profile.status() == &ProfileStatus::Uninitialized {
+		if new_profile.status() == &WindowRelativeProfileStatus::Uninitialized {
 			if let Err(error) = new_profile.on_open() {
 				error_handler(new_profile.name(), error);
 			}
@@ -130,7 +130,7 @@ impl WindowRelativeSystem {
 				error_handler(new_profile.name(), error);
 			}
 		}
-		*new_profile.status_mut() = ProfileStatus::Active;
+		*new_profile.status_mut() = WindowRelativeProfileStatus::Active;
 		if let Err(error) = new_profile.on_activate() {
 			error_handler(new_profile.name(), error);
 		}

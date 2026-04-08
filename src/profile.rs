@@ -5,10 +5,10 @@ use std::error::Error;
 
 
 #[derive(PartialEq)]
-pub enum ProfileStatus { Uninitialized, Deactivated, Active }
-impl Default for ProfileStatus {
+pub enum WindowRelativeProfileStatus { Uninitialized, Deactivated, Active }
+impl Default for WindowRelativeProfileStatus {
 	fn default() -> Self {
-		ProfileStatus::Uninitialized
+		WindowRelativeProfileStatus::Uninitialized
 	}
 }
 
@@ -21,8 +21,8 @@ macro_rules! implement_window_relative_profile_essentials {
 			fn process_name(&self) -> &str { &self.process_name }
 			fn task_system(&self) -> &TaskSystem { &self.task_system }
 			fn task_system_mut(&mut self) -> &mut TaskSystem { &mut self.task_system }
-			fn status(&self) -> &ProfileStatus { &self.status }
-			fn status_mut(&mut self) -> &mut ProfileStatus { &mut self.status }
+			fn status(&self) -> &WindowRelativeProfileStatus { &self.status }
+			fn status_mut(&mut self) -> &mut WindowRelativeProfileStatus { &mut self.status }
 		}
 	};
 }
@@ -43,10 +43,10 @@ pub trait WindowRelativeProfileEssentials:Send + Sync + 'static {
 	fn task_system_mut(&mut self) -> &mut TaskSystem;
 
 	/// Get the status of the profile.
-	fn status(&self) -> &ProfileStatus;
+	fn status(&self) -> &WindowRelativeProfileStatus;
 
 	/// Get a mutable reference to the status of the profile.
-	fn status_mut(&mut self) -> &mut ProfileStatus;
+	fn status_mut(&mut self) -> &mut WindowRelativeProfileStatus;
 }
 pub trait WindowRelativeProfile:WindowRelativeProfileEssentials {
 

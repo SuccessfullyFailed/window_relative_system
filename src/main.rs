@@ -1,4 +1,4 @@
-use window_relative_system::{ ProfileStatus, TaskSystem, WindowRelativeProfile, WindowRelativeProfileEssentials, WindowRelativeSystem, implement_window_relative_profile_essentials };
+use window_relative_system::{ WindowRelativeProfileStatus, TaskSystem, WindowRelativeProfile, WindowRelativeProfileEssentials, WindowRelativeSystem, implement_window_relative_profile_essentials };
 use window_controller::WindowController;
 
 
@@ -7,7 +7,7 @@ struct ProfileBareBones {
 	name:String,
 	process_name:String,
 	task_system:TaskSystem,
-	status:ProfileStatus
+	status:WindowRelativeProfileStatus
 }
 implement_window_relative_profile_essentials!(ProfileBareBones);
 impl WindowRelativeProfile for ProfileBareBones {
@@ -22,7 +22,7 @@ impl ProfileBareBones {
 			name: name.to_string(),
 			process_name: process_name.to_string(),
 			task_system: TaskSystem::new(),
-			status: ProfileStatus::default()
+			status: WindowRelativeProfileStatus::default()
 		}
 	}
 }
