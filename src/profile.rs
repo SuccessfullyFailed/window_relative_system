@@ -16,13 +16,13 @@ impl Default for WindowRelativeProfileStatus {
 #[macro_export]
 macro_rules! implement_window_relative_profile_essentials {
 	($type:ty) => {
-		impl WindowRelativeProfileEssentials for $type {
+		impl window_relative_system::WindowRelativeProfileEssentials for $type {
 			fn name(&self) -> &str { &self.name }
 			fn process_name(&self) -> &str { &self.process_name }
-			fn task_system(&self) -> &TaskSystem { &self.task_system }
-			fn task_system_mut(&mut self) -> &mut TaskSystem { &mut self.task_system }
-			fn status(&self) -> &WindowRelativeProfileStatus { &self.status }
-			fn status_mut(&mut self) -> &mut WindowRelativeProfileStatus { &mut self.status }
+			fn task_system(&self) -> &window_relative_system::TaskSystem { &self.task_system }
+			fn task_system_mut(&mut self) -> &mut window_relative_system::TaskSystem { &mut self.task_system }
+			fn status(&self) -> &window_relative_system::WindowRelativeProfileStatus { &self.status }
+			fn status_mut(&mut self) -> &mut window_relative_system::WindowRelativeProfileStatus { &mut self.status }
 		}
 	};
 }

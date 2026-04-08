@@ -1,9 +1,10 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ WindowRelativeProfileStatus, TaskSystem, WindowRelativeProfile, WindowRelativeProfileEssentials, implement_window_relative_profile_essentials };
+	use crate::{ WindowRelativeProfileStatus, TaskSystem, WindowRelativeProfile, implement_window_relative_profile_essentials };
 	use window_controller::WindowController;
 	use std::{ error::Error, sync::Mutex };
-
+	use crate as window_relative_system; // Makes the profile creation macro usable from within the crate.
+	
 
 
 	static EVENT_RUN_PROOF:Mutex<usize> = Mutex::new(0);
