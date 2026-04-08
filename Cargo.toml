@@ -1,6 +1,6 @@
 [package]
 name="window_relative_system"
-version="2.0.0"
+version="2.0.1"
 edition="2024"
 
 [dependencies]
@@ -8,5 +8,4 @@ modifications_queue={ git="https://github.com/SuccessfullyFailed/modifications_q
 window_controller={ git="https://github.com/SuccessfullyFailed/window_controller", version="0.1.1" }
 circular_buffer={ git="https://github.com/SuccessfullyFailed/circular_buffer", version="0.1.1" }
 task_syncer={ git="https://github.com/SuccessfullyFailed/task_syncer", version="0.1.6" }
-profile_creation_macro={ path="./profile_creation_macro" }
 winapi={ version="0.3", features=["winuser"] }

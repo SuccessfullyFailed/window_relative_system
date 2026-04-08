@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ ProfileStatus, WindowRelativeProfile, WindowRelativeProfileEssentials, TaskSystem };
+	use crate::{ ProfileStatus, TaskSystem, WindowRelativeProfile, WindowRelativeProfileEssentials, implement_window_relative_profile_essentials };
 	use window_controller::WindowController;
 	use std::{ error::Error, sync::Mutex };
 
@@ -10,13 +10,13 @@ mod tests {
 
 
 
-	#[derive(WindowRelativeProfileEssentials)]
 	struct TestProfile {
 		name:&'static str,
 		process_name:&'static str,
 		task_system:TaskSystem,
 		status:ProfileStatus
 	}
+	implement_window_relative_profile_essentials!(TestProfile);
 	impl WindowRelativeProfile for TestProfile {
 		fn on_event(&mut self, _window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
 			if event_name == "custom_event_tag" {

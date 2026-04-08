@@ -10,4 +10,3 @@ pub use profile::*;
 
 pub use window_controller::WindowController;
 pub use task_syncer::*;
-pub use profile_creation_macro::WindowRelativeProfileEssentials;

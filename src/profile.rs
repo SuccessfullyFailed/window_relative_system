@@ -13,6 +13,21 @@ impl Default for ProfileStatus {
 }
 
 
+#[macro_export]
+macro_rules! implement_window_relative_profile_essentials {
+	($type:ty) => {
+		impl WindowRelativeProfileEssentials for $type {
+			fn name(&self) -> &str { &self.name }
+			fn process_name(&self) -> &str { &self.process_name }
+			fn task_system(&self) -> &TaskSystem { &self.task_system }
+			fn task_system_mut(&mut self) -> &mut TaskSystem { &mut self.task_system }
+			fn status(&self) -> &ProfileStatus { &self.status }
+			fn status_mut(&mut self) -> &mut ProfileStatus { &mut self.status }
+		}
+	};
+}
+
+
 pub trait WindowRelativeProfileEssentials:Send + Sync + 'static {
 
 	/// Get the name of the profile.

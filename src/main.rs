@@ -1,15 +1,15 @@
-use window_relative_system::{ ProfileStatus, TaskSystem, WindowRelativeProfile, WindowRelativeProfileEssentials, WindowRelativeSystem };
+use window_relative_system::{ ProfileStatus, TaskSystem, WindowRelativeProfile, WindowRelativeProfileEssentials, WindowRelativeSystem, implement_window_relative_profile_essentials };
 use window_controller::WindowController;
 
 
 
-#[derive(WindowRelativeProfileEssentials)]
 struct ProfileBareBones {
 	name:String,
 	process_name:String,
 	task_system:TaskSystem,
 	status:ProfileStatus
 }
+implement_window_relative_profile_essentials!(ProfileBareBones);
 impl WindowRelativeProfile for ProfileBareBones {
 	fn on_activate(&mut self) -> Result<(), Box<dyn std::error::Error>> {
 		println!("\tprofile {} was activated.", &self.name);
