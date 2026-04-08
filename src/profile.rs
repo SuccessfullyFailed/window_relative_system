@@ -14,6 +14,31 @@ impl Default for WindowRelativeProfileStatus {
 
 
 #[macro_export]
+macro_rules! window_relative_profile {
+	($type:ident, $name:expr, $process_name:expr) => {
+		window_relative_profile!($type);
+		impl Default for $type {
+			fn default() -> Self {
+				$type {
+					name: $name,
+					process_name: $process_name,
+					task_system: window_relative_system::TaskSystem::default(),
+					status: window_relative_system::WindowRelativeProfileStatus::default()
+				}
+			}
+		}
+	};
+	($type:ident) => {
+		pub struct $type {
+			name:&'static str,
+			process_name:&'static str,
+			task_system:window_relative_system::TaskSystem,
+			status:window_relative_system::WindowRelativeProfileStatus
+		}
+		window_relative_system::implement_window_relative_profile_essentials!($type);
+	};
+}
+#[macro_export]
 macro_rules! implement_window_relative_profile_essentials {
 	($type:ty) => {
 		impl window_relative_system::WindowRelativeProfileEssentials for $type {

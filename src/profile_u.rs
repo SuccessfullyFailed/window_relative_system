@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ WindowRelativeProfileStatus, TaskSystem, WindowRelativeProfile, implement_window_relative_profile_essentials };
+	use crate::{ WindowRelativeProfile, window_relative_profile };
 	use window_controller::WindowController;
 	use std::{ error::Error, sync::Mutex };
 	use crate as window_relative_system; // Makes the profile creation macro usable from within the crate.
@@ -11,29 +11,13 @@ mod tests {
 
 
 
-	struct TestProfile {
-		name:&'static str,
-		process_name:&'static str,
-		task_system:TaskSystem,
-		status:WindowRelativeProfileStatus
-	}
-	implement_window_relative_profile_essentials!(TestProfile);
+	window_relative_profile!(TestProfile, "test_profile", "test_process_name.exe");
 	impl WindowRelativeProfile for TestProfile {
 		fn on_event(&mut self, _window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
 			if event_name == "custom_event_tag" {
 				*EVENT_RUN_PROOF.lock().unwrap() = 1;
 			}
 			Ok(())
-		}
-	}
-	impl Default for TestProfile {
-		fn default() -> Self {
-			TestProfile {
-				name: "test_profile",
-				process_name: "test_process_name.exe",
-				task_system: TaskSystem::default(),
-				status: WindowRelativeProfileStatus::default()
-			}
 		}
 	}
 
