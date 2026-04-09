@@ -113,3 +113,15 @@ pub trait WindowRelativeProfile:WindowRelativeProfileEssentials {
 		Ok(())
 	}
 }
+
+
+
+impl<T:WindowRelativeProfileEssentials> WindowRelativeProfileEssentials for Box<T> {
+	fn name(&self) -> &str { (&**self).name() }
+	fn process_name(&self) -> &str { (&**self).process_name() }
+	fn task_system(&self) -> &TaskSystem { (&**self).task_system() }
+	fn task_system_mut(&mut self) -> &mut TaskSystem { (&mut **self).task_system_mut() }
+	fn status(&self) -> &WindowRelativeProfileStatus { (&**self).status() }
+	fn status_mut(&mut self) -> &mut WindowRelativeProfileStatus { (&mut **self).status_mut() }
+}
+impl<T:WindowRelativeProfile> WindowRelativeProfile for Box<T> {}
