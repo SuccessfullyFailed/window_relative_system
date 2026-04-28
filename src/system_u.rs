@@ -1,31 +1,28 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ WindowRelativeProfileStatus, TaskSystem, WindowRelativeProfile, WindowRelativeProfileEssentials, WindowRelativeSystem, WindowRelativeSystemRemoteControl };
-	use std::{ sync::Mutex, thread::{ self, sleep }, time::Duration };
+	use crate::{ TaskSystem, WindowRelativeProfile, WindowRelativeSystem, WindowRelativeSystemRemoteControl };
+	use std::{ sync::Mutex, time::Duration, thread::{ self, sleep } };
 	
 
 	struct WindowRelativeProfileCore {
 		name:&'static str,
 		process_name:&'static str,
-		task_system:TaskSystem,
-		status:WindowRelativeProfileStatus
+		task_system:TaskSystem
 	}
-	impl WindowRelativeProfileEssentials for WindowRelativeProfileCore {
+	impl WindowRelativeProfile for WindowRelativeProfileCore {
 		fn name(&self) -> &str { self.name }
-		fn process_name(&self) -> &str { self.process_name}
 		fn task_system(&self) -> &TaskSystem { &self.task_system }
 		fn task_system_mut(&mut self) -> &mut TaskSystem { &mut self.task_system }
-		fn status(&self) -> &WindowRelativeProfileStatus { &self.status }
-		fn status_mut(&mut self) -> &mut WindowRelativeProfileStatus { &mut self.status }
+		fn matches_window(&self, _window:&window_controller::WindowController, process_name:&str, _process_title:&str) -> bool {
+			process_name == self.process_name
+		}
 	}
-	impl WindowRelativeProfile for WindowRelativeProfileCore {}
 	impl WindowRelativeProfileCore {
 		fn new(name:&'static str, process_name:&'static str) -> WindowRelativeProfileCore {
 			WindowRelativeProfileCore {
 				name,
 				process_name,
-				task_system: TaskSystem::new(),
-				status: WindowRelativeProfileStatus::default()
+				task_system: TaskSystem::new()
 			}
 		}
 	}
@@ -37,8 +34,8 @@ mod tests {
 	const SECONDARY_PROFILE_NAME:&str = "secondary_profile_name";
 	const SECONDARY_PROFILE_PROCESS_NAME:&str = "secondary_process_name";
 	fn test_system() -> WindowRelativeSystem {
-		WindowRelativeSystem::new(WindowRelativeProfileCore::new(DEFAULT_PROFILE_NAME, DEFAULT_PROFILE_PROCESS_NAME))
-			.with_profile(WindowRelativeProfileCore::new(SECONDARY_PROFILE_NAME, SECONDARY_PROFILE_PROCESS_NAME))
+		WindowRelativeSystem::new(Box::new(WindowRelativeProfileCore::new(DEFAULT_PROFILE_NAME, DEFAULT_PROFILE_PROCESS_NAME)))
+			.with_profile(Box::new(WindowRelativeProfileCore::new(SECONDARY_PROFILE_NAME, SECONDARY_PROFILE_PROCESS_NAME)))
 	}
 
 
@@ -78,9 +75,7 @@ mod tests {
 	#[test]
 	fn test_system_on_default_profile() {
 		assert!(
-			test_system().execute_on_default_profile(|profile| {
-				profile.name() == DEFAULT_PROFILE_NAME && profile.process_name() == DEFAULT_PROFILE_PROCESS_NAME
-			})
+			test_system().execute_on_default_profile(|profile| profile.name() == DEFAULT_PROFILE_NAME)
 		);
 	}
 

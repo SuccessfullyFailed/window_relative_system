@@ -1,4 +1,4 @@
-use winapi::um::winuser::{DispatchMessageW, GetMessageW, SetWinEventHook, TranslateMessage, EVENT_SYSTEM_FOREGROUND, MSG, WINEVENT_OUTOFCONTEXT};
+use winapi::um::winuser::{ DispatchMessageW, GetMessageW, SetWinEventHook, TranslateMessage, EVENT_SYSTEM_FOREGROUND, MSG, WINEVENT_OUTOFCONTEXT} ;
 use winapi::shared::{ minwindef::DWORD, ntdef::LONG, windef::{ HWINEVENTHOOK, HWINEVENTHOOK__, HWND } };
 use std::{ mem, ptr::null_mut, sync::{ Mutex, MutexGuard }, thread };
 use crate::WindowRelativeSystemRemoteControl;
@@ -9,13 +9,24 @@ use std::thread::JoinHandle;
 
 static HOOK_HANDLE:Mutex<Option<JoinHandle<()>>> = Mutex::new(None);
 static mut PREVIOUS_WINDOW:Option<WindowController> = None;
-static REMOTE_CONTROLS:Mutex<Vec<WindowRelativeSystemRemoteControl>> = Mutex::new(Vec::new());
+static REMOTE_CONTROLS:Mutex<Vec<Box<dyn WindowRelativeRemote>>> = Mutex::new(Vec::new());
+
+
+
+trait WindowRelativeRemote:Send + Sync {
+	fn trigger_window_change(&self, previous_window:&Option<WindowController>, current_window:&WindowController);
+}
+impl WindowRelativeRemote for WindowRelativeSystemRemoteControl {
+	fn trigger_window_change(&self, previous_window:&Option<WindowController>, current_window:&WindowController) {
+		self.handle_window_change(previous_window, current_window);
+	}
+}
 
 
 
 /// Create a signal trigger.
 pub(crate) fn register_remote(remote:WindowRelativeSystemRemoteControl) {
-	REMOTE_CONTROLS.lock().unwrap().push(remote);
+	REMOTE_CONTROLS.lock().unwrap().push(Box::new(remote));
 	launch_hook_if_not_exist();
 }
 
@@ -69,7 +80,7 @@ unsafe extern "system" fn win_event_proc(_event_hook:HWINEVENTHOOK, event:DWORD,
 
 			// Update profile in window-relative system.
 			for remote_control in &*REMOTE_CONTROLS.lock().unwrap() {
-				remote_control.handle_window_change(&PREVIOUS_WINDOW, &current_window);
+				remote_control.trigger_window_change(&PREVIOUS_WINDOW, &current_window);
 			}
 			PREVIOUS_WINDOW = Some(current_window);
 		}

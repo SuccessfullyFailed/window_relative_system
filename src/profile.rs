@@ -4,84 +4,51 @@ use std::error::Error;
 
 
 
-#[derive(PartialEq)]
-pub enum WindowRelativeProfileStatus { Uninitialized, Deactivated, Active }
-impl Default for WindowRelativeProfileStatus {
-	fn default() -> Self {
-		WindowRelativeProfileStatus::Uninitialized
-	}
-}
-
-
 #[macro_export]
 macro_rules! window_relative_profile {
-	($type:ident, $name:expr, $process_name:expr) => {
-		window_relative_profile!($type);
+	($type:ident, $name:expr, $process_name:expr, $($implementation_body:item)*) => {
+		pub struct $type {
+			task_system:window_relative_system::TaskSystem
+		}
 		impl Default for $type {
 			fn default() -> Self {
 				$type {
-					name: $name,
-					process_name: $process_name,
-					task_system: window_relative_system::TaskSystem::default(),
-					status: window_relative_system::WindowRelativeProfileStatus::default()
+					task_system: window_relative_system::TaskSystem::default()
 				}
 			}
 		}
-	};
-	($type:ident) => {
-		pub struct $type {
-			name:&'static str,
-			process_name:&'static str,
-			task_system:window_relative_system::TaskSystem,
-			status:window_relative_system::WindowRelativeProfileStatus
-		}
-		window_relative_system::implement_window_relative_profile_essentials!($type);
-	};
-}
-#[macro_export]
-macro_rules! implement_window_relative_profile_essentials {
-	($type:ty) => {
-		impl window_relative_system::WindowRelativeProfileEssentials for $type {
-			fn name(&self) -> &str { &self.name }
-			fn process_name(&self) -> &str { &self.process_name }
+		impl window_relative_system::WindowRelativeProfile for $type {
+			fn name(&self) -> &str { $name }
 			fn task_system(&self) -> &window_relative_system::TaskSystem { &self.task_system }
 			fn task_system_mut(&mut self) -> &mut window_relative_system::TaskSystem { &mut self.task_system }
-			fn status(&self) -> &window_relative_system::WindowRelativeProfileStatus { &self.status }
-			fn status_mut(&mut self) -> &mut window_relative_system::WindowRelativeProfileStatus { &mut self.status }
+			fn matches_window(&self, _window:&window_relative_system::WindowController, process_name:&str, _process_title:&str) -> bool { process_name == $process_name }
+			$($implementation_body)*
 		}
 	};
 }
 
 
-pub trait WindowRelativeProfileEssentials:Send + Sync + 'static {
+
+pub trait WindowRelativeProfile:Send + Sync + 'static {
+
+	/* IMPLEMENT METHODS */
 
 	/// Get the name of the profile.
 	fn name(&self) -> &str;
-
-	/// Get the process-name of the profile.
-	fn process_name(&self) -> &str;
 
 	/// Get a reference to the task system.
 	fn task_system(&self) -> &TaskSystem;
 
 	/// Get a mutable reference to the task system.
 	fn task_system_mut(&mut self) -> &mut TaskSystem;
+	
+	/// Whether or not this profile is linked to the given window.
+	fn matches_window(&self, window:&WindowController, process_name:&str, process_title:&str) -> bool;
 
-	/// Get the status of the profile.
-	fn status(&self) -> &WindowRelativeProfileStatus;
 
-	/// Get a mutable reference to the status of the profile.
-	fn status_mut(&mut self) -> &mut WindowRelativeProfileStatus;
-}
-pub trait WindowRelativeProfile:WindowRelativeProfileEssentials {
+
 
 	/* PROPERTY GETTER METHODS */
-
-	/// Whether or not this profile is the active one.
-	#[allow(unused_variables)]
-	fn matches_window(&self, active_window:&WindowController, active_process_name:&str, active_process_title:&str) -> bool {
-		self.process_name() == active_process_name
-	}
 
 	/// Get the task scheduler of this profile.
 	fn task_scheduler(&self) -> TaskScheduler {
@@ -114,14 +81,23 @@ pub trait WindowRelativeProfile:WindowRelativeProfileEssentials {
 	}
 }
 
-
-
-impl<T:WindowRelativeProfileEssentials> WindowRelativeProfileEssentials for Box<T> {
-	fn name(&self) -> &str { (&**self).name() }
-	fn process_name(&self) -> &str { (&**self).process_name() }
-	fn task_system(&self) -> &TaskSystem { (&**self).task_system() }
-	fn task_system_mut(&mut self) -> &mut TaskSystem { (&mut **self).task_system_mut() }
-	fn status(&self) -> &WindowRelativeProfileStatus { (&**self).status() }
-	fn status_mut(&mut self) -> &mut WindowRelativeProfileStatus { (&mut **self).status_mut() }
+impl<T:WindowRelativeProfile + ?Sized> WindowRelativeProfile for Box<T> {
+	fn name(&self) -> &str {
+		let unboxed:&T = &**self;
+		unboxed.name()
+	}
+	fn task_system(&self) -> &TaskSystem {
+		let unboxed:&T = &**self;
+		unboxed.task_system()
+	}
+	
+	fn task_system_mut(&mut self) -> &mut TaskSystem {
+		let unboxed:&mut T = &mut **self;
+		unboxed.task_system_mut()
+	}
+	
+	fn matches_window(&self, window:&WindowController, process_name:&str, process_title:&str) -> bool {
+		let unboxed:&T = &**self;
+		unboxed.matches_window(window, process_name, process_title)
+	}
 }
-impl<T:WindowRelativeProfile> WindowRelativeProfile for Box<T> {}

@@ -11,15 +11,17 @@ mod tests {
 
 
 
-	window_relative_profile!(TestProfile, "test_profile", "test_process_name.exe");
-	impl WindowRelativeProfile for TestProfile {
+	window_relative_profile!(
+		TestProfile,
+		"test_profile",
+		"test_process_name.exe",
 		fn on_event(&mut self, _window:&WindowController, event_name:&str) -> Result<(), Box<dyn Error>> {
 			if event_name == "custom_event_tag" {
 				*EVENT_RUN_PROOF.lock().unwrap() = 1;
 			}
 			Ok(())
 		}
-	}
+	);
 
 
 	#[test]
