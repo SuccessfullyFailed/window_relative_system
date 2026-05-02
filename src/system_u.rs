@@ -26,6 +26,11 @@ mod tests {
 			}
 		}
 	}
+	impl Into<Box<dyn WindowRelativeProfile>> for WindowRelativeProfileCore {
+		fn into(self) -> Box<dyn WindowRelativeProfile> {
+			Box::new(self)
+		}
+	}
 
 
 
@@ -34,8 +39,8 @@ mod tests {
 	const SECONDARY_PROFILE_NAME:&str = "secondary_profile_name";
 	const SECONDARY_PROFILE_PROCESS_NAME:&str = "secondary_process_name";
 	fn test_system() -> WindowRelativeSystem {
-		WindowRelativeSystem::new(Box::new(WindowRelativeProfileCore::new(DEFAULT_PROFILE_NAME, DEFAULT_PROFILE_PROCESS_NAME)))
-			.with_profile(Box::new(WindowRelativeProfileCore::new(SECONDARY_PROFILE_NAME, SECONDARY_PROFILE_PROCESS_NAME)))
+		WindowRelativeSystem::new(WindowRelativeProfileCore::new(DEFAULT_PROFILE_NAME, DEFAULT_PROFILE_PROCESS_NAME))
+			.with_profile(WindowRelativeProfileCore::new(SECONDARY_PROFILE_NAME, SECONDARY_PROFILE_PROCESS_NAME))
 	}
 
 

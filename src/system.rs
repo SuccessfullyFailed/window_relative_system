@@ -4,24 +4,26 @@ use window_controller::WindowController;
 use std::{ error::Error, sync::Arc };
 
 
-pub struct WindowRelativeSystem {
-	profiles:Vec<Box<dyn WindowRelativeProfile>>,
-	default_profile:Box<dyn WindowRelativeProfile>,
+
+type BoxedProfile = Box<dyn WindowRelativeProfile>;
+pub struct WindowRelativeSystem<Profile:WindowRelativeProfile=BoxedProfile> {
+	profiles:Vec<Profile>,
+	default_profile:Profile,
 	active_profile_index:Option<usize>,
 	error_handler:Arc<dyn Fn(&str, Box<dyn Error>) + Send + Sync + 'static>,
 
-	modifications_queue:ModificationsQueue<WindowRelativeSystem>,
+	modifications_queue:ModificationsQueue<WindowRelativeSystem<Profile>>,
 	hook_remote_registered:bool
 }
-impl WindowRelativeSystem {
+impl<Profile:WindowRelativeProfile> WindowRelativeSystem<Profile> {
 
 	/* CONSTRUCTOR METHODS */
 	
 	/// Create a new system.
-	pub fn new<Profile:WindowRelativeProfile>(default_profile:Profile) -> Self {
+	pub fn new<Source:Into<Profile>>(default_profile:Source) -> Self {
 		WindowRelativeSystem {
 			profiles: Vec::new(),
-			default_profile: Box::new(default_profile),
+			default_profile: default_profile.into(),
 			active_profile_index: None,
 			error_handler: Arc::new(|profile_name, error| eprintln!("WindowRelativeSystem error on profile {}: {:?}", profile_name, error)),
 
@@ -44,14 +46,14 @@ impl WindowRelativeSystem {
 	}
 
 	/// Return self with a profile.
-	pub fn with_profile<Profile:WindowRelativeProfile>(mut self, profile:Profile) -> Self {
+	pub fn with_profile<Source:Into<Profile>>(mut self, profile:Source) -> Self {
 		self.add_profile(profile);
 		self
 	}
 
 	/// Add a profile to the system.
-	pub fn add_profile<Profile:WindowRelativeProfile>(&mut self, profile:Profile) {
-		self.profiles.push(Box::new(profile));
+	pub fn add_profile<Source:Into<Profile>>(&mut self, profile:Source) {
+		self.profiles.push(profile.into());
 	}
 
 
@@ -60,7 +62,7 @@ impl WindowRelativeSystem {
 
 	/// Get a remote control to the system.
 	/// Allows triggering events and making changes to the system from somewhere else.
-	pub fn create_remote(&self) -> WindowRelativeSystemRemoteControl {
+	pub fn create_remote(&self) -> WindowRelativeSystemRemoteControl<Profile> {
 		WindowRelativeSystemRemoteControl(self.modifications_queue.create_remote())
 	}
 
@@ -104,7 +106,7 @@ impl WindowRelativeSystem {
 		// Handle previous profile deactivation.
 		// This code is a bit messy, but makes sure the events and errors are handled when they occur.
 		if let Some(previous_window) = previous_window {
-			let previous_profile:&mut dyn WindowRelativeProfile = self.profile_with_index_mut(self.active_profile_index);
+			let previous_profile:&mut Profile = self.profile_with_index_mut(self.active_profile_index);
 			previous_profile.task_system_mut().stop();
 			if let Err(error) = previous_profile.on_deactivate() {
 				error_handler(previous_profile.name(), error);
@@ -119,7 +121,7 @@ impl WindowRelativeSystem {
 
 		// Handle new profile activation.
 		// This code is a bit messy, but makes sure the events and errors are handled when they occur.
-		let new_profile:&mut dyn WindowRelativeProfile = self.profile_with_index_mut(self.active_profile_index);
+		let new_profile:&mut Profile = self.profile_with_index_mut(self.active_profile_index);
 		if let Err(error) = new_profile.on_activate() {
 			error_handler(new_profile.name(), error);
 		}
@@ -131,7 +133,7 @@ impl WindowRelativeSystem {
 
 	/// Get a mutable window-relative profile with the given index.
 	/// Will return the default profile on None.
-	fn profile_with_index_mut(&mut self, index:Option<usize>) -> &mut dyn WindowRelativeProfile {
+	fn profile_with_index_mut(&mut self, index:Option<usize>) -> &mut Profile {
 		if let Some(index) = index {
 			if index < self.profiles.len() {
 				return &mut self.profiles[index];
@@ -147,7 +149,7 @@ impl WindowRelativeSystem {
 	/// Execute an event on the active profile.
 	pub fn trigger_event(&mut self, event_name:&str) {
 		let error_handler:Arc<dyn Fn(&str, Box<dyn Error + 'static>) + Send + Sync> = Arc::clone(&self.error_handler);
-		let current_profile:&mut dyn WindowRelativeProfile = self.profile_with_index_mut(self.active_profile_index);
+		let current_profile:&mut Profile = self.profile_with_index_mut(self.active_profile_index);
 		if let Err(error) = current_profile.execute_event(&WindowController::active(), event_name) {
 			error_handler(current_profile.name(), error);
 		}
@@ -155,7 +157,7 @@ impl WindowRelativeSystem {
 
 	/// Execute an action on all profiles.
 	/// Includes the default profile.
-	pub fn execute_on_all_profiles<Action:Fn(&mut dyn WindowRelativeProfile) -> ReturnType, ReturnType>(&mut self, action:Action) -> Vec<ReturnType> {
+	pub fn execute_on_all_profiles<Action:Fn(&mut Profile) -> ReturnType, ReturnType>(&mut self, action:Action) -> Vec<ReturnType> {
 		vec![
 			vec![action(&mut self.default_profile)],
 			self.profiles.iter_mut().map(|profile| action(&mut *profile)).collect()
@@ -164,18 +166,18 @@ impl WindowRelativeSystem {
 
 	/// Execute an action on the currently activated profile.
 	/// Uses the default profile if no profile is active.
-	pub fn execute_on_current_profile<Action:FnOnce(&mut dyn WindowRelativeProfile) -> ReturnType, ReturnType>(&mut self, action:Action) -> ReturnType {
+	pub fn execute_on_current_profile<Action:FnOnce(&mut Profile) -> ReturnType, ReturnType>(&mut self, action:Action) -> ReturnType {
 		action(self.profile_with_index_mut(self.active_profile_index))
 	}
 
 	/// Execute an action on the default profile.
-	pub fn execute_on_default_profile<Action:FnOnce(&mut dyn WindowRelativeProfile) -> ReturnType, ReturnType>(&mut self, action:Action) -> ReturnType {
+	pub fn execute_on_default_profile<Action:FnOnce(&mut Profile) -> ReturnType, ReturnType>(&mut self, action:Action) -> ReturnType {
 		action(&mut self.default_profile)
 	}
 
 	/// Execute an action on the profile with the given name.
 	/// Does nothing if the profile does not exist.
-	pub fn execute_on_profile_with_name<Action:FnOnce(&mut dyn WindowRelativeProfile) -> ReturnType, ReturnType>(&mut self, name:&str, action:Action) -> Option<ReturnType> {
+	pub fn execute_on_profile_with_name<Action:FnOnce(&mut Profile) -> ReturnType, ReturnType>(&mut self, name:&str, action:Action) -> Option<ReturnType> {
 		if name == self.default_profile.name() {
 			return Some(action(&mut self.default_profile));
 		}
@@ -191,8 +193,8 @@ impl WindowRelativeSystem {
 
 
 #[derive(Clone)]
-pub struct WindowRelativeSystemRemoteControl(ModificationsQueueRemote<WindowRelativeSystem>);
-impl WindowRelativeSystemRemoteControl {
+pub struct WindowRelativeSystemRemoteControl<Profile:WindowRelativeProfile=BoxedProfile>(ModificationsQueueRemote<WindowRelativeSystem<Profile>>);
+impl<Profile:WindowRelativeProfile> WindowRelativeSystemRemoteControl<Profile> {
 
 	/* STATE CHANGING METHODS */
 
@@ -225,7 +227,7 @@ impl WindowRelativeSystemRemoteControl {
 
 	/// Execute an action on all profiles.
 	/// Includes the default profile.
-	pub fn execute_on_all_profiles<Action:Fn(&mut dyn WindowRelativeProfile) + Send + Sync + 'static>(&self, action:Action) {
+	pub fn execute_on_all_profiles<Action:Fn(&mut Profile) + Send + Sync + 'static>(&self, action:Action) {
 		self.0.add(move |system| {
 			system.execute_on_all_profiles(action);
 		});
@@ -233,14 +235,14 @@ impl WindowRelativeSystemRemoteControl {
 
 	/// Execute an action on the currently activated profile.
 	/// Uses the default profile if no profile is active.
-	pub fn execute_on_current_profile<Action:FnOnce(&mut dyn WindowRelativeProfile) + Send + Sync + 'static>(&self, action:Action) {
+	pub fn execute_on_current_profile<Action:FnOnce(&mut Profile) + Send + Sync + 'static>(&self, action:Action) {
 		self.0.add(move |system| {
 			action(system.profile_with_index_mut(system.active_profile_index));
 		});
 	}
 
 	/// Execute an action on the default profile.
-	pub fn execute_on_default_profile<Action:FnOnce(&mut dyn WindowRelativeProfile) + Send + Sync + 'static>(&self, action:Action) {
+	pub fn execute_on_default_profile<Action:FnOnce(&mut Profile) + Send + Sync + 'static>(&self, action:Action) {
 		self.0.add(move |system| {
 			action(&mut system.default_profile);
 		});
@@ -248,7 +250,7 @@ impl WindowRelativeSystemRemoteControl {
 
 	/// Execute an action on the profile with the given name.
 	/// Does nothing if the profile does not exist.
-	pub fn execute_on_profile_with_name<Action:Fn(&mut dyn WindowRelativeProfile) + Send + Sync + 'static>(&self, name:&str, action:Action){
+	pub fn execute_on_profile_with_name<Action:Fn(&mut Profile) + Send + Sync + 'static>(&self, name:&str, action:Action){
 		let name:String = name.to_string();
 		self.0.add(move |system| {
 			if name == system.default_profile.name() {

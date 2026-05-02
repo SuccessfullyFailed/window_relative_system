@@ -1,7 +1,7 @@
 use winapi::um::winuser::{ DispatchMessageW, GetMessageW, SetWinEventHook, TranslateMessage, EVENT_SYSTEM_FOREGROUND, MSG, WINEVENT_OUTOFCONTEXT} ;
 use winapi::shared::{ minwindef::DWORD, ntdef::LONG, windef::{ HWINEVENTHOOK, HWINEVENTHOOK__, HWND } };
-use std::{ mem, ptr::null_mut, sync::{ Mutex, MutexGuard }, thread };
-use crate::WindowRelativeSystemRemoteControl;
+use crate::{ WindowRelativeProfile, WindowRelativeSystemRemoteControl };
+use std::{ mem, thread, ptr::null_mut, sync::{ Mutex, MutexGuard } };
 use window_controller::WindowController;
 use std::thread::JoinHandle;
 
@@ -16,7 +16,7 @@ static REMOTE_CONTROLS:Mutex<Vec<Box<dyn WindowRelativeRemote>>> = Mutex::new(Ve
 trait WindowRelativeRemote:Send + Sync {
 	fn trigger_window_change(&self, previous_window:&Option<WindowController>, current_window:&WindowController);
 }
-impl WindowRelativeRemote for WindowRelativeSystemRemoteControl {
+impl<Profile:WindowRelativeProfile> WindowRelativeRemote for WindowRelativeSystemRemoteControl<Profile> {
 	fn trigger_window_change(&self, previous_window:&Option<WindowController>, current_window:&WindowController) {
 		self.handle_window_change(previous_window, current_window);
 	}
@@ -25,10 +25,12 @@ impl WindowRelativeRemote for WindowRelativeSystemRemoteControl {
 
 
 /// Create a signal trigger.
-pub(crate) fn register_remote(remote:WindowRelativeSystemRemoteControl) {
+pub(crate) fn register_remote<Profile:WindowRelativeProfile>(remote:WindowRelativeSystemRemoteControl<Profile>) {
 	REMOTE_CONTROLS.lock().unwrap().push(Box::new(remote));
 	launch_hook_if_not_exist();
 }
+
+
 
 /// Create a window-hook event callback.
 pub(crate) fn launch_hook_if_not_exist() {

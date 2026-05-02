@@ -38,7 +38,7 @@ impl WindowRelativeProfile for ProfileBareBones {
 
 
 pub fn main() {
-	let mut system:WindowRelativeSystem = WindowRelativeSystem::new(Box::new(ProfileBareBones::new("default_profile", "default_process_name")));
-	system.add_profile(Box::new(ProfileBareBones::new("active_process", &WindowController::active().process_name().unwrap_or_default())));
+	let mut system:WindowRelativeSystem<ProfileBareBones> = WindowRelativeSystem::new(ProfileBareBones::new("default_profile", "default_process_name"));
+	system.add_profile(ProfileBareBones::new("active_process", &WindowController::active().process_name().unwrap_or_default()));
 	system.run();
 }

@@ -80,7 +80,6 @@ pub trait WindowRelativeProfile:Send + Sync + 'static {
 		Ok(())
 	}
 }
-
 impl<T:WindowRelativeProfile + ?Sized> WindowRelativeProfile for Box<T> {
 	fn name(&self) -> &str {
 		let unboxed:&T = &**self;
