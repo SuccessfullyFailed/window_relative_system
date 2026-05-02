@@ -170,6 +170,17 @@ impl<Profile:WindowRelativeProfile> WindowRelativeSystem<Profile> {
 		action(self.profile_with_index_mut(self.active_profile_index))
 	}
 
+	/// Try to execute an action on the currently activated profile.
+	/// Uses the default profile if no profile is active.
+	/// If any errors happen, handles them using the systems' error handler.
+	pub fn try_execute_on_current_profile<Action:FnOnce(&mut Profile) -> Result<(), Box<dyn Error>>>(&mut self, action:Action) {
+		let error_handler:Arc<dyn Fn(&str, Box<dyn Error + 'static>) + Send + Sync> = Arc::clone(&self.error_handler);
+		let current_profile:&mut Profile = self.profile_with_index_mut(self.active_profile_index);
+		if let Err(error) = action(current_profile) {
+			error_handler(current_profile.name(), error);
+		}
+	}
+
 	/// Execute an action on the default profile.
 	pub fn execute_on_default_profile<Action:FnOnce(&mut Profile) -> ReturnType, ReturnType>(&mut self, action:Action) -> ReturnType {
 		action(&mut self.default_profile)
@@ -237,6 +248,15 @@ impl<Profile:WindowRelativeProfile> WindowRelativeSystemRemoteControl<Profile> {
 	pub fn execute_on_current_profile<Action:FnOnce(&mut Profile) + Send + Sync + 'static>(&self, action:Action) {
 		self.0.add(move |system| {
 			action(system.profile_with_index_mut(system.active_profile_index));
+		});
+	}
+
+	/// Try to execute an action on the currently activated profile.
+	/// Uses the default profile if no profile is active.
+	/// Handles any errors using the systems' error handler.
+	pub fn try_execute_on_current_profile<Action:FnOnce(&mut Profile) -> Result<(), Box<dyn Error>> + Send + Sync + 'static>(&self, action:Action) {
+		self.0.add(move |system| {
+			system.try_execute_on_current_profile(action);
 		});
 	}
 
