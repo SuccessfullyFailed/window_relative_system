@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-	use crate::{ TaskSystem, WindowRelativeProfile, WindowRelativeSystem, WindowRelativeSystemRemoteControl };
+	use crate::{ TaskSystem, WindowRelativeProfile, WindowRelativeSystem, WindowRelativeSystemRemoteControl, window_relative_profile };
 	use std::{ sync::Mutex, time::Duration, thread::{ self, sleep } };
 	
 
@@ -111,5 +111,14 @@ mod tests {
 			system.run();
 		});
 		sleep(Duration::from_millis(500));
+	}
+
+	#[test]
+	fn test_remote_can_be_cloned_for_non_clonable_profiles() {
+		use crate as window_relative_system;
+		window_relative_profile!(NonClonableProfile, "", "", );
+		let system:WindowRelativeSystem<NonClonableProfile> = WindowRelativeSystem::new(NonClonableProfile::default());
+		let system_remote:WindowRelativeSystemRemoteControl<NonClonableProfile> = system.create_remote();
+		let _remote_clone:WindowRelativeSystemRemoteControl<NonClonableProfile> = system_remote.clone();
 	}
 }

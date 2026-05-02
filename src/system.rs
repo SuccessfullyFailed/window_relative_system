@@ -192,7 +192,6 @@ impl<Profile:WindowRelativeProfile> WindowRelativeSystem<Profile> {
 
 
 
-#[derive(Clone)]
 pub struct WindowRelativeSystemRemoteControl<Profile:WindowRelativeProfile=BoxedProfile>(ModificationsQueueRemote<WindowRelativeSystem<Profile>>);
 impl<Profile:WindowRelativeProfile> WindowRelativeSystemRemoteControl<Profile> {
 
@@ -263,5 +262,10 @@ impl<Profile:WindowRelativeProfile> WindowRelativeSystemRemoteControl<Profile> {
 				}
 			}
 		});
+	}
+}
+impl<Profile:WindowRelativeProfile> Clone for WindowRelativeSystemRemoteControl<Profile> {
+	fn clone(&self) -> Self {
+		WindowRelativeSystemRemoteControl(ModificationsQueueRemote::clone(&self.0))
 	}
 }
